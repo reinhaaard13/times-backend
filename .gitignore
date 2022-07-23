@@ -132,4 +132,4 @@ dist
 /config
 /uploads
 
-./nodemon.json
+nodemon.json
