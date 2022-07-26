@@ -70,6 +70,16 @@ db.Subproduct.belongsTo(db.Product, {
 	sourceKey: "product_id",
 })
 
+// Comments Associations
+db.Comment.belongsTo(db.User, {
+	foreignKey: "user_id",
+	sourceKey: "user_id",
+})
+db.Comment.belongsTo(db.Ticket, {
+	foreignKey: "ticket_id",
+	sourceKey: "ticket_id",
+})
+
 Object.keys(db).forEach((modelName) => {
 	if (db[modelName].associate) {
 		db[modelName].associate(db);

@@ -43,7 +43,7 @@ const login = async (req, res) => {
 
   // Create a token for the user
 	const token = jwt.sign(
-		{ id: foundUser.id, role: foundUser.role },
+		{ id: foundUser.user_id, role: foundUser.role },
 		process.env.JWT_SECRET,
 		{ expiresIn: "1h" }
 	);
@@ -108,10 +108,10 @@ const register = async (req, res) => {
       password: hashedPassword,
       role,
       created_by: 'Admin',
-      updated_by: 'Admin'
+      modified_by: 'Admin'
     })
     return res.status(201).json({ newUser });
-  } catch {
+  } catch (error) {
     return res.status(500).json({ error });
   }
 }

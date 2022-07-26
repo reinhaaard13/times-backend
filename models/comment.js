@@ -3,9 +3,9 @@ module.exports = (sequelize, DataTypes) => {
 		"Comment",
 		{
 			comment_id: {
-				type: DataTypes.STRING,
+				type: DataTypes.INTEGER(4).ZEROFILL,
 				primaryKey: true,
-				allowNull: false,
+				autoIncrement: true,
 			},
 			comment_body: {
 				type: DataTypes.STRING,

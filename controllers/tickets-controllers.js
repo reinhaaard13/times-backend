@@ -112,8 +112,10 @@ const getTicketById = async (req, res) => {
 	}
 };
 
-const confirmTicket = async (req, res) => {
+const modifyTicketStatus = async (req, res) => {
 	const { id } = req.params;
+
+	const { status } = req.body;
 
 	try {
 		const ticket = await db.Ticket.findOne({
@@ -121,9 +123,49 @@ const confirmTicket = async (req, res) => {
 				ticket_id: id,
 			},
 		});
-		ticket.status = "PROGRESS";
+		ticket.status = status;
 		await ticket.save();
 		return res.status(200).json({ ticket });
+	} catch (err) {
+		return res.status(400).json({ error: err.message });
+	}
+};
+
+const getTicketComments = async (req, res) => {
+	const { id } = req.params;
+
+	try {
+		const comments = await db.Comment.findAll({
+			where: {
+				ticket_id: id,
+			},
+			include: [
+				{ model: db.User, attributes: ["name"] },
+			]
+		});
+		// setTimeout(() => {
+			return res.status(200).json({ comments });
+		// }, 3000)
+	} catch (err) {
+		return res.status(400).json({ error: err.message });
+	}
+};
+
+const createTicketComment = async (req, res) => {
+	const { id } = req.params;
+	const { comment_body } = req.body;
+	const user = req.userData.id;
+
+	// Check if ticket user is the PIC of the ticket
+
+	// Add Comment
+	try {
+		const comment = await db.Comment.create({
+			comment_body,
+			ticket_id: id,
+			user_id: user,
+		});
+		return res.status(201).json({ comment });
 	} catch (err) {
 		return res.status(400).json({ error: err.message });
 	}
@@ -133,5 +175,7 @@ module.exports = {
 	getAllTickets,
 	createTicket,
 	getTicketById,
-	confirmTicket,
+	modifyTicketStatus,
+	getTicketComments,
+	createTicketComment,
 };
