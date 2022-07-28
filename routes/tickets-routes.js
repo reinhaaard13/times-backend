@@ -9,13 +9,14 @@ router.get("/", ticketsControllers.getAllTickets);
 
 router.post(
 	"/",
+	checkAuth,
 	fileUpload.single("attachment"),
 	ticketsControllers.createTicket
 );
 
 router.get("/:id", ticketsControllers.getTicketById)
 
-router.patch("/:id/status", ticketsControllers.modifyTicketStatus)
+router.patch("/:id/status", checkAuth, ticketsControllers.modifyTicketStatus)
 
 router.get("/:id/comments", ticketsControllers.getTicketComments)
 

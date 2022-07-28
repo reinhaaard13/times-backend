@@ -18,18 +18,39 @@ const getAllTickets = async (req, res) => {
 			offset: (page - 1) * limit,
 		});
 
+		const allTickets = await db.Ticket.findAll();
+		const stats = {
+			total: count,
+			open: allTickets.filter((ticket) => ticket.status === "OPEN").length,
+			closed: allTickets.filter((ticket) => ticket.status === "CLOSED").length,
+			progress: allTickets.filter((ticket) => ticket.status === "PROGRESS")
+				.length,
+		};
+
 		const nextlink =
 			page * limit < count
 				? `/api/tickets?limit=${limit}&page=${page + 1}`
 				: null;
 		const prevlink =
 			page > 1 ? `/api/tickets?limit=${limit}&page=${page - 1}` : null;
+			
+		// setTimeout(() => {
+		// 	return res.status(200).json({
+		// 		tickets,
+		// 		total: tickets.length,
+		// 		limit,
+		// 		page,
+		// 		stats,
+		// 		next: nextlink,
+		// 		previous: prevlink,
+		// 	});
+		// }, 3000)
 		return res.status(200).json({
 			tickets,
 			total: tickets.length,
 			limit,
 			page,
-			count,
+			stats,
 			next: nextlink,
 			previous: prevlink,
 		});
@@ -51,6 +72,30 @@ const createTicket = async (req, res) => {
 		casesubject,
 		description,
 	} = req.body;
+
+	let user;
+	try {
+		const user_id = req.userData.id;
+		user = await db.User.findOne({
+			where: {
+				user_id,
+			},
+			include: {
+        model: db.Role,
+        attributes: ["role_id"],
+        include: {
+          model: db.Privilege,
+          attributes: ["privilege_id"]
+        }
+      }
+		})
+		const privileges = user.Role.Privileges.map(privilege => privilege.privilege_id);
+		if (!privileges.includes("TICKET_CREATE")) {
+			return res.status(401).json({ error: "Unauthorized" });
+		}
+	} catch (err) {
+		return res.status(400).json({ error: err.message });
+	}
 
 	try {
 		const lastId = await db.Ticket.max("id");
@@ -78,7 +123,7 @@ const createTicket = async (req, res) => {
 			casesubject,
 			description,
 			attachment: req.file?.path,
-			created_by: "admin",
+			created_by: user.user_id,
 		});
 		return res.status(200).json({ newTicket });
 	} catch (error) {
@@ -123,7 +168,14 @@ const modifyTicketStatus = async (req, res) => {
 				ticket_id: id,
 			},
 		});
+
+		if (status === "CLOSED") {
+			if (req.userData.id !== ticket.created_by)
+				return res.status(401).json({ error: "Unauthorized" });
+		}
+
 		ticket.status = status;
+		ticket.pic_id = req.userData.id;
 		await ticket.save();
 		return res.status(200).json({ ticket });
 	} catch (err) {
@@ -139,12 +191,10 @@ const getTicketComments = async (req, res) => {
 			where: {
 				ticket_id: id,
 			},
-			include: [
-				{ model: db.User, attributes: ["name"] },
-			]
+			include: [{ model: db.User, attributes: ["name"] }],
 		});
 		// setTimeout(() => {
-			return res.status(200).json({ comments });
+		return res.status(200).json({ comments });
 		// }, 3000)
 	} catch (err) {
 		return res.status(400).json({ error: err.message });

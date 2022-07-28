@@ -47,7 +47,7 @@ module.exports = (sequelize, DataTypes) => (
       allowNull: false,
     },
     description: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     attachment: {
@@ -55,7 +55,7 @@ module.exports = (sequelize, DataTypes) => (
       // allowNull: false,
     },
     created_by: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER(11).ZEROFILL,
       allowNull: false,
     },
     modified_by: {
