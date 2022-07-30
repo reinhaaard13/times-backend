@@ -35,27 +35,36 @@ fs.readdirSync(__dirname)
 	});
 
 // Ticket Associations
-db.Ticket.hasOne(db.CaseSubject, {
-	foreignKey: "id",
-	sourceKey: "casesubject",
+db.Ticket.belongsTo(db.CaseSubject, {
+	foreignKey: "casesubject",
+	sourceKey: "id",
 });
-db.Ticket.hasOne(db.Product, {
-	foreignKey: "product_id",
-	sourceKey: "product",
+db.Ticket.belongsTo(db.Product, {
+	foreignKey: "product",
+	sourceKey: "product_id",
 });
-db.Ticket.hasOne(db.Subproduct, {
-	foreignKey: "subproduct_id",
-	sourceKey: "subproduct",
+db.Ticket.belongsTo(db.Subproduct, {
+	foreignKey: "subproduct",
+	sourceKey: "subproduct_id",
 });
+db.Ticket.hasMany(db.Comment, {
+	foreignKey: "ticket_id",
+	sourceKey: "ticket_id",
+})
 
 // User Associations
-db.User.hasOne(db.Role, { foreignKey: "role_id", sourceKey: "role" });
+db.User.belongsTo(db.Role, { foreignKey: "role", sourceKey: "role_id" });
 
-// Role Associations
+// Role Privilege Associations
+db.Privilege.belongsToMany(db.Role, {
+	through: db.RolePrivilege,
+	foreignKey: "privilege_id",
+  otherKey: "role_id"
+});
 db.Role.belongsToMany(db.Privilege, {
 	through: db.RolePrivilege,
 	foreignKey: "role_id",
-  otherKey: "privilege_id",
+  otherKey: "privilege_id"
 });
 
 // Product Associations

@@ -22,4 +22,6 @@ router.get("/:id/comments", ticketsControllers.getTicketComments)
 
 router.post("/:id/comments", checkAuth, ticketsControllers.createTicketComment)
 
+router.get('/report', ticketsControllers.getTicketsReport)
+
 module.exports = router;

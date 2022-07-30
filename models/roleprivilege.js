@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define('RolePrivilege', {
     id: {
-      type: DataTypes.INTEGER(11).ZEROFILL,
+      type: DataTypes.INTEGER(4).ZEROFILL,
       primaryKey: true,
       autoIncrement: true,
     },
@@ -25,5 +25,11 @@ module.exports = (sequelize, DataTypes) => {
     createdAt: 'created_date',
     updatedAt: 'modified_date',
     tableName: 'role_privilege',
+    indexes: [
+      {
+        unique: false,
+        fields: ['role_id', 'privilege_id'],
+      }
+    ]
   })
 }

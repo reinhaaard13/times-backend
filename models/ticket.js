@@ -27,11 +27,11 @@ module.exports = (sequelize, DataTypes) => (
       allowNull: false,
     },
     product: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER(4).ZEROFILL,
       allowNull: false,
     },
     subproduct: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER(4).ZEROFILL,
       allowNull: false,
     },
     assigned_to: {
@@ -43,7 +43,7 @@ module.exports = (sequelize, DataTypes) => (
       allowNull: false,
     },
     casesubject: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER(4).ZEROFILL,
       allowNull: false,
     },
     description: {
@@ -63,7 +63,7 @@ module.exports = (sequelize, DataTypes) => (
       default: null,
     },
     pic_id: {
-      type: DataTypes.INTEGER(4).ZEROFILL,
+      type: DataTypes.INTEGER(11).ZEROFILL,
     },
     status: {
       type: DataTypes.STRING,
@@ -77,6 +77,18 @@ module.exports = (sequelize, DataTypes) => (
       {
         unique: true,
         fields: ['ticket_id']
+      },
+      {
+        unique: false,
+        fields: ['casesubject']
+      },
+      {
+        unique: false,
+        fields: ['product']
+      },
+      {
+        unique: false,
+        fields: ['subproduct']
       }
     ]
   })

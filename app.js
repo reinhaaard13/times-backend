@@ -37,9 +37,9 @@ app.use("/api/subproducts", subproductRoutes);
 
 app.use("/api/roles", rolesRoutes);
 
-app.use("/api/subjects", subjectRoutes)
+app.use("/api/subjects", subjectRoutes);
 
-db.sequelize.sync().then(() => {
+db.sequelize.sync({alter: true}).then(() => {
 	app.listen(process.env.PORT || 5000, () => {
 		console.log(`Server is running at port ${process.env.PORT || 5000}`);
 	});

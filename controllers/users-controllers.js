@@ -34,7 +34,7 @@ const login = async (req, res) => {
 	try { // Try to compare the password with the hash in the database
 		isPasswordValid = await bcrypt.compare(password, foundUser.password);
 	} catch (err) {
-		return res.status(500).json({ err });
+		return res.status(500).json({ message: "Error Retrieving Password" });
 	}
 
 	if (!isPasswordValid) {
@@ -62,7 +62,7 @@ const login = async (req, res) => {
       name: foundUser.name,
     },
     role: foundUser.role,
-    privileges    
+    privileges,
   })
 };
 
@@ -73,7 +73,7 @@ const register = async (req, res) => {
     email,
     password,
     phone,
-    role
+    role,
   } = req.body;
 
   let foundUser;

@@ -221,6 +221,29 @@ const createTicketComment = async (req, res) => {
 	}
 };
 
+const getTicketsReport = async (req, res) => {
+	const { start, end } = req.body;
+
+	try {
+		const tickets = await db.Ticket.findAll({
+			where: {
+				created_date: {
+					[Op.between]: [start, end],
+				},
+			},
+			include: [
+				{ model: db.Product, attributes: ["product_name"] },
+				{ model: db.Subproduct, attributes: ["subproduct_name"] },
+				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
+			],
+		});
+
+		
+	} catch (err) {
+		return res.status(400).json({ error: err.message });
+	}
+}
+
 module.exports = {
 	getAllTickets,
 	createTicket,
@@ -228,4 +251,5 @@ module.exports = {
 	modifyTicketStatus,
 	getTicketComments,
 	createTicketComment,
+	getTicketsReport
 };

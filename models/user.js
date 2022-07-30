@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
     username: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: 'username',
     },
     password: {
       type: DataTypes.STRING,
@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: "email",
       validate: {
         isEmail: true
       }
@@ -85,7 +85,8 @@ module.exports = (sequelize, DataTypes) => {
     updatedAt: 'modified_date',
     indexes: [
       {
-        fields: ['username', 'role', 'email']
+        unique: false,
+        fields: ['role']
       }
     ]
   })

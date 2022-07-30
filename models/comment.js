@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
 				allowNull: false,
 			},
 			user_id: {
-				type: DataTypes.STRING,
+				type: DataTypes.INTEGER(11).ZEROFILL,
 				allowNull: false,
 			},
 			ticket_id: {
@@ -23,6 +23,12 @@ module.exports = (sequelize, DataTypes) => {
 		{
 			createdAt: "created_date",
 			updatedAt: "modified_date",
+			// indexes: [
+			// 	{
+			// 		unique: false,
+			// 		fields: ["ticket_id"],
+			// 	}
+			// ]
 		}
 	);
 };
