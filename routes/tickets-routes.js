@@ -14,6 +14,8 @@ router.post(
 	ticketsControllers.createTicket
 );
 
+router.get('/report', ticketsControllers.getTicketsReport)
+
 router.get("/:id", ticketsControllers.getTicketById)
 
 router.patch("/:id/status", checkAuth, ticketsControllers.modifyTicketStatus)
@@ -22,6 +24,5 @@ router.get("/:id/comments", ticketsControllers.getTicketComments)
 
 router.post("/:id/comments", checkAuth, ticketsControllers.createTicketComment)
 
-router.get('/report', ticketsControllers.getTicketsReport)
 
 module.exports = router;

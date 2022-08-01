@@ -69,6 +69,15 @@ module.exports = (sequelize, DataTypes) => (
       type: DataTypes.STRING,
       enum: ["OPEN", "PROGRESS", "CLOSED"],
       defaultValue: 'OPEN'
+    },
+    sla: {
+      type: DataTypes.INTEGER,
+    },
+    solution: {
+      type: DataTypes.TEXT,
+    },
+    closed_date: {
+      type: DataTypes.DATE,
     }
   }, {
     createdAt: 'created_date',

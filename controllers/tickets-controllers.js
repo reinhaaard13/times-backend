@@ -3,6 +3,8 @@ const { Op } = require("sequelize");
 const db = require("../models");
 
 const padStart = require("../helper/padStart");
+const { generateSLA } = require("../helper/sla");
+const generateReportPDF = require('../helper/generateReportPdf')
 
 const getAllTickets = async (req, res) => {
 	const limit = +req.query.limit || 10;
@@ -110,7 +112,7 @@ const createTicket = async (req, res) => {
 		const generatedId =
 			product_name.substring(0, 3).toUpperCase() + padStart(newId, 4);
 
-		const newTicket = await db.Ticket.create({
+		const newTicket = db.Ticket.build({
 			ticket_id: generatedId,
 			location,
 			cust_name,
@@ -125,6 +127,17 @@ const createTicket = async (req, res) => {
 			attachment: req.file?.path,
 			created_by: user.user_id,
 		});
+
+		const caseSubject = await db.CaseSubject.findOne({
+			where: {
+				id: casesubject,
+			}
+		})
+
+		await generateSLA(newTicket, caseSubject.severity);
+
+		await newTicket.save()
+
 		return res.status(200).json({ newTicket });
 	} catch (error) {
 		console.log(error);
@@ -144,13 +157,13 @@ const getTicketById = async (req, res) => {
 				{ model: db.Product, attributes: ["product_name"] },
 				{ model: db.Subproduct, attributes: ["subproduct_name"] },
 				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
+				{ model: db.User, attributes: ["name"] }
 			],
 		});
 
 		if (!ticket) {
 			return res.status(404).json({ error: "Ticket not found" });
 		}
-
 		return res.status(200).json({ ticket });
 	} catch (err) {
 		return res.status(400).json({ error: err.message });
@@ -167,15 +180,28 @@ const modifyTicketStatus = async (req, res) => {
 			where: {
 				ticket_id: id,
 			},
+			include: [
+				{ model: db.Product, attributes: ["product_name"] },
+				{ model: db.Subproduct, attributes: ["subproduct_name"] },
+				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
+				{ model: db.User, attributes: ["name"] }
+			],
 		});
 
 		if (status === "CLOSED") {
 			if (req.userData.id !== ticket.created_by)
 				return res.status(401).json({ error: "Unauthorized" });
+
+			const { solution } = req.body;
+			ticket.status = status
+			ticket.solution = solution;
+			ticket.closed_date = new Date();
+			ticket.sla = null
+		} else if (status === "PROGRESS") {
+			ticket.status = status;
+			ticket.pic_id = req.userData.id;
 		}
 
-		ticket.status = status;
-		ticket.pic_id = req.userData.id;
 		await ticket.save();
 		return res.status(200).json({ ticket });
 	} catch (err) {
@@ -222,10 +248,13 @@ const createTicketComment = async (req, res) => {
 };
 
 const getTicketsReport = async (req, res) => {
-	const { start, end } = req.body;
+	const start = req.body.start || decodeURIComponent(req.query.start);
+	const end = req.body.end || decodeURIComponent(req.query.end);
+
+	let tickets
 
 	try {
-		const tickets = await db.Ticket.findAll({
+		tickets = await db.Ticket.findAll({
 			where: {
 				created_date: {
 					[Op.between]: [start, end],
@@ -235,9 +264,14 @@ const getTicketsReport = async (req, res) => {
 				{ model: db.Product, attributes: ["product_name"] },
 				{ model: db.Subproduct, attributes: ["subproduct_name"] },
 				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
+				{ model: db.User, attributes: ["name"] }
 			],
 		});
 
+		const doc = await generateReportPDF(tickets, start, end)
+
+		doc.pipe(res)
+		// return res.status(200).json({ filename });
 		
 	} catch (err) {
 		return res.status(400).json({ error: err.message });

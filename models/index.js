@@ -51,6 +51,16 @@ db.Ticket.hasMany(db.Comment, {
 	foreignKey: "ticket_id",
 	sourceKey: "ticket_id",
 })
+db.Ticket.belongsTo(db.User, {
+	foreignKey: "pic_id",
+	sourceKey: "user_id",
+})
+
+// User Associations
+db.User.hasMany(db.Ticket, {
+	foreignKey: "pic_id",
+	sourceKey: "user_id",
+})
 
 // User Associations
 db.User.belongsTo(db.Role, { foreignKey: "role", sourceKey: "role_id" });
