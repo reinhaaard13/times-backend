@@ -11,7 +11,7 @@ module.exports = async (tickets, start, end) => {
 		size: "A4",
 	});
 
-	const filename = "TIMES_REPORT_" + moment().format("YYYY-MM-DD_HH-mm");
+	// const filename = "TIMES_REPORT_" + moment().format("YYYY-MM-DD_HH-mm");
 
 	// doc.pipe(
 	// 	fs.createWriteStream(path.join("public", "reports", `${filename}.pdf`))
@@ -26,12 +26,12 @@ module.exports = async (tickets, start, end) => {
 			{ label: "No.", property: "no", width: 20 },
 			{ label: "Ticket ID", property: "ticket_id", width: 40 },
 			{ label: "Product", property: "product", width: 80 },
-			{ label: "Status", property: "status", width: 40 },
+			{ label: "Status", property: "status", width: 50 },
 			{ label: "Event Location", property: "location", width: 80 },
 			{ label: "Subject", property: "casesubject", width: 90 },
 			{ label: "Created At", property: "created_date", width: 70 },
 			{ label: "Severity", property: "severity", width: 50 },
-			{ label: "SLA", property: "sla", width: 40 },
+			{ label: "SLA", property: "sla", width: 50 },
 		],
 		datas: tickets.map((ticket, idx) => {
 			return {

@@ -5,6 +5,8 @@ const db = require("../models");
 const padStart = require("../helper/padStart");
 const { generateSLA } = require("../helper/sla");
 const generateReportPDF = require('../helper/generateReportPdf')
+const notificationController = require('./notification-controllers');
+const notification = require("../models/notification");
 
 const getAllTickets = async (req, res) => {
 	const limit = +req.query.limit || 10;
@@ -138,6 +140,8 @@ const createTicket = async (req, res) => {
 
 		await newTicket.save()
 
+		await notificationController.makeNotification(newTicket, "TICKET_CREATE")
+
 		return res.status(200).json({ newTicket });
 	} catch (error) {
 		console.log(error);
@@ -157,7 +161,8 @@ const getTicketById = async (req, res) => {
 				{ model: db.Product, attributes: ["product_name"] },
 				{ model: db.Subproduct, attributes: ["subproduct_name"] },
 				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
-				{ model: db.User, attributes: ["name"] }
+				{ model: db.User, attributes: ["name"], as: "pic" },
+				{ model: db.User, attributes: ["name"], as: "createdBy" },
 			],
 		});
 
@@ -184,7 +189,7 @@ const modifyTicketStatus = async (req, res) => {
 				{ model: db.Product, attributes: ["product_name"] },
 				{ model: db.Subproduct, attributes: ["subproduct_name"] },
 				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
-				{ model: db.User, attributes: ["name"] }
+				{ model: db.User, attributes: ["name"], as: "pic" }
 			],
 		});
 
@@ -197,9 +202,13 @@ const modifyTicketStatus = async (req, res) => {
 			ticket.solution = solution;
 			ticket.closed_date = new Date();
 			ticket.sla = null
+
+			await notificationController.makeNotification(ticket, "TICKET_CLOSED")
 		} else if (status === "PROGRESS") {
 			ticket.status = status;
 			ticket.pic_id = req.userData.id;
+
+			await notificationController.makeNotification(ticket, "TICKET_PROGRESS")
 		}
 
 		await ticket.save();
@@ -241,6 +250,9 @@ const createTicketComment = async (req, res) => {
 			ticket_id: id,
 			user_id: user,
 		});
+
+		await notificationController.makeNotification(comment, "TICKET_COMMENT")
+
 		return res.status(201).json({ comment });
 	} catch (err) {
 		return res.status(400).json({ error: err.message });
@@ -250,7 +262,7 @@ const createTicketComment = async (req, res) => {
 const getTicketsReport = async (req, res) => {
 	const start = req.body.start || decodeURIComponent(req.query.start);
 	const end = req.body.end || decodeURIComponent(req.query.end);
-
+	
 	let tickets
 
 	try {
@@ -264,9 +276,10 @@ const getTicketsReport = async (req, res) => {
 				{ model: db.Product, attributes: ["product_name"] },
 				{ model: db.Subproduct, attributes: ["subproduct_name"] },
 				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
-				{ model: db.User, attributes: ["name"] }
+				{ model: db.User, attributes: ["name"], as: "pic" },
 			],
 		});
+		
 
 		const doc = await generateReportPDF(tickets, start, end)
 

@@ -54,6 +54,12 @@ db.Ticket.hasMany(db.Comment, {
 db.Ticket.belongsTo(db.User, {
 	foreignKey: "pic_id",
 	sourceKey: "user_id",
+	as: "pic"
+})
+db.Ticket.belongsTo(db.User, {
+	foreignKey: "created_by",
+	sourceKey: "user_id",
+	as: "createdBy"
 })
 
 // User Associations
@@ -97,6 +103,43 @@ db.Comment.belongsTo(db.User, {
 db.Comment.belongsTo(db.Ticket, {
 	foreignKey: "ticket_id",
 	sourceKey: "ticket_id",
+})
+
+// Notification Associations
+db.Notification.belongsTo(db.User, {
+	foreignKey: "notifier_id",
+	sourceKey: "user_id",
+})
+db.User.hasMany(db.Notification, {
+	foreignKey: "notifier_id",
+	sourceKey: "user_id",
+})
+
+db.NotificationChange.belongsTo(db.User, {
+	foreignKey: "actor_id",
+	sourceKey: "user_id",
+})
+db.User.hasMany(db.NotificationChange, {
+	foreignKey: "actor_id",
+	sourceKey: "user_id",
+})
+
+db.NotificationObject.hasOne(db.Notification, {
+	foreignKey: "notification_object_id",
+	sourceKey: "id",
+})
+db.Notification.belongsTo(db.NotificationObject, {
+	foreignKey: "notification_object_id",
+	sourceKey: "id",
+})
+
+db.NotificationChange.belongsTo(db.NotificationObject, {
+	foreignKey: "notification_object_id",
+	sourceKey: "id",
+})
+db.NotificationObject.hasOne(db.NotificationChange, {
+	foreignKey: "notification_object_id",
+	sourceKey: "id",
 })
 
 Object.keys(db).forEach((modelName) => {
