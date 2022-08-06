@@ -2,11 +2,12 @@ const { Op } = require("sequelize");
 
 const db = require("../models");
 
+const fs = require("fs");
+
 const padStart = require("../helper/padStart");
 const { generateSLA } = require("../helper/sla");
-const generateReportPDF = require('../helper/generateReportPdf')
-const notificationController = require('./notification-controllers');
-const notification = require("../models/notification");
+const generateReportPDF = require("../helper/generateReportPdf");
+const notificationController = require("./notification-controllers");
 
 const getAllTickets = async (req, res) => {
 	const limit = +req.query.limit || 10;
@@ -17,8 +18,25 @@ const getAllTickets = async (req, res) => {
 			include: [
 				{ model: db.Product, attributes: ["product_name"] },
 				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
+				{ model: db.User, attributes: ["name"], as: "pic" },
+				{ model: db.User, attributes: ["name"], as: "createdBy" },
 			],
+			where: {
+				[Op.or]: [
+					{
+						assigned_to:
+							req.userData.role !== "Administrator" &&
+							req.userData.role.split("_")[0],
+					},
+					{
+						created_by_dept:
+							req.userData.role !== "Administrator" &&
+							req.userData.role.split("_")[0],
+					},
+				],
+			},
 			limit,
+			order: [["created_date", "DESC"]],
 			offset: (page - 1) * limit,
 		});
 
@@ -37,7 +55,7 @@ const getAllTickets = async (req, res) => {
 				: null;
 		const prevlink =
 			page > 1 ? `/api/tickets?limit=${limit}&page=${page - 1}` : null;
-			
+
 		// setTimeout(() => {
 		// 	return res.status(200).json({
 		// 		tickets,
@@ -77,23 +95,22 @@ const createTicket = async (req, res) => {
 		description,
 	} = req.body;
 
+	const trx = await db.sequelize.transaction();
+
 	let user;
+	let user_role;
 	try {
 		const user_id = req.userData.id;
 		user = await db.User.findOne({
 			where: {
 				user_id,
 			},
-			include: {
-        model: db.Role,
-        attributes: ["role_id"],
-        include: {
-          model: db.Privilege,
-          attributes: ["privilege_id"]
-        }
-      }
-		})
-		const privileges = user.Role.Privileges.map(privilege => privilege.privilege_id);
+		});
+		user_role = await user.getRole();
+		const user_privileges = await user_role.getPrivileges();
+		const privileges = user_privileges.map(
+			(privilege) => privilege.privilege_id
+		);
 		if (!privileges.includes("TICKET_CREATE")) {
 			return res.status(401).json({ error: "Unauthorized" });
 		}
@@ -126,25 +143,37 @@ const createTicket = async (req, res) => {
 			department,
 			casesubject,
 			description,
-			attachment: req.file?.path,
 			created_by: user.user_id,
+			created_by_dept: user_role.role_category,
 		});
 
 		const caseSubject = await db.CaseSubject.findOne({
 			where: {
 				id: casesubject,
-			}
-		})
+			},
+		});
 
 		await generateSLA(newTicket, caseSubject.severity);
 
-		await newTicket.save()
+		await newTicket.save({ transaction: trx });
 
-		await notificationController.makeNotification(newTicket, "TICKET_CREATE")
+		req.files.forEach(async (file) => {
+			await newTicket.createAttachment(
+				{
+					attachment_url: file.path,
+				},
+				{ transaction: trx }
+			);
+		});
+
+		await notificationController.makeNotification(newTicket, "TICKET_CREATE");
+
+		await trx.commit();
 
 		return res.status(200).json({ newTicket });
 	} catch (error) {
 		console.log(error);
+		await trx.rollback();
 		return res.status(400).json({ error: error.message });
 	}
 };
@@ -175,6 +204,45 @@ const getTicketById = async (req, res) => {
 	}
 };
 
+const deleteTicketById = async (req, res) => {
+	const id = req.params.id;
+
+	const trx = await db.sequelize.transaction();
+
+	try {
+		const ticket = await db.Ticket.findOne({
+			where: {
+				ticket_id: id,
+			},
+		});
+
+		if (!ticket) {
+			return res.status(404).json({ error: "Ticket not found" });
+		}
+
+		if (ticket.created_by !== req.userData.id) {
+			return res.status(401).json({ error: "Unauthorized" });
+		}
+
+		await notificationController.deleteNotificationOfTicket(ticket.id);
+
+		const attachments = await ticket.getAttachments();
+		attachments.forEach(async (attachment) => {
+			fs.unlinkSync(attachment.attachment_url);
+			await attachment.destroy({ transaction: trx });
+		}),
+
+		await ticket.destroy({ transaction: trx });
+
+		await trx.commit();
+		return res.status(200).json({ message: "Ticket deleted" });
+	} catch (err) {
+		await trx.rollback();
+		console.log(err);
+		return res.status(400).json({ error: err.message });
+	}
+};
+
 const modifyTicketStatus = async (req, res) => {
 	const { id } = req.params;
 
@@ -189,7 +257,7 @@ const modifyTicketStatus = async (req, res) => {
 				{ model: db.Product, attributes: ["product_name"] },
 				{ model: db.Subproduct, attributes: ["subproduct_name"] },
 				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
-				{ model: db.User, attributes: ["name"], as: "pic" }
+				{ model: db.User, attributes: ["name"], as: "pic" },
 			],
 		});
 
@@ -198,17 +266,17 @@ const modifyTicketStatus = async (req, res) => {
 				return res.status(401).json({ error: "Unauthorized" });
 
 			const { solution } = req.body;
-			ticket.status = status
+			ticket.status = status;
 			ticket.solution = solution;
 			ticket.closed_date = new Date();
-			ticket.sla = null
+			ticket.sla = null;
 
-			await notificationController.makeNotification(ticket, "TICKET_CLOSED")
+			await notificationController.makeNotification(ticket, "TICKET_CLOSED");
 		} else if (status === "PROGRESS") {
 			ticket.status = status;
 			ticket.pic_id = req.userData.id;
 
-			await notificationController.makeNotification(ticket, "TICKET_PROGRESS")
+			await notificationController.makeNotification(ticket, "TICKET_PROGRESS");
 		}
 
 		await ticket.save();
@@ -251,7 +319,7 @@ const createTicketComment = async (req, res) => {
 			user_id: user,
 		});
 
-		await notificationController.makeNotification(comment, "TICKET_COMMENT")
+		await notificationController.makeNotification(comment, "TICKET_COMMENT");
 
 		return res.status(201).json({ comment });
 	} catch (err) {
@@ -262,8 +330,8 @@ const createTicketComment = async (req, res) => {
 const getTicketsReport = async (req, res) => {
 	const start = req.body.start || decodeURIComponent(req.query.start);
 	const end = req.body.end || decodeURIComponent(req.query.end);
-	
-	let tickets
+
+	let tickets;
 
 	try {
 		tickets = await db.Ticket.findAll({
@@ -279,14 +347,28 @@ const getTicketsReport = async (req, res) => {
 				{ model: db.User, attributes: ["name"], as: "pic" },
 			],
 		});
-		
 
-		const doc = await generateReportPDF(tickets, start, end)
+		const doc = await generateReportPDF(tickets, start, end);
 
-		doc.pipe(res)
+		doc.pipe(res);
 		// return res.status(200).json({ filename });
-		
 	} catch (err) {
+		return res.status(400).json({ error: err.message });
+	}
+};
+
+const getFilterParameters = async (req, res) => {
+	try {
+		const products = await db.Product.findAll({
+			attributes: ['product_id', "product_name"]
+		});
+		const casesubjects = await db.CaseSubject.findAll({
+			attributes: ['id', "subject"]
+		});
+
+		return res.status(200).json({ products, casesubjects });
+	} catch (err) {
+		console.log(err);
 		return res.status(400).json({ error: err.message });
 	}
 }
@@ -298,5 +380,7 @@ module.exports = {
 	modifyTicketStatus,
 	getTicketComments,
 	createTicketComment,
-	getTicketsReport
+	getTicketsReport,
+	deleteTicketById,
+	getFilterParameters
 };

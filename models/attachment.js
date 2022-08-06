@@ -1,23 +1,19 @@
 
+
 module.exports = (sequelize, DataTypes) => {
-  return sequelize.define('CaseSubject', {
-    id: {
+  return sequelize.define('Attachment', {
+    attachment_id: {
       type: DataTypes.INTEGER(4).ZEROFILL,
-      primaryKey: true,
       autoIncrement: true,
-      unique: 'id'
+      primaryKey: true,
     },
-    subproduct_id: {
-      type: DataTypes.INTEGER(4).ZEROFILL,
-      allowNull: false,
-    },
-    subject: {
+    attachment_url: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    severity: {
+    ticket_id: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-  });
+  })
 }

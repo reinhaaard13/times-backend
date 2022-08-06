@@ -2,7 +2,11 @@ const db = require('../models')
 
 const getAllSubproducts = async (req, res) => {
   try {
-    const subproducts = await db.Subproduct.findAll()
+    const subproducts = await db.Subproduct.findAll({
+      include: [
+        {model: db.Product, attributes: ['product_name']}
+      ]
+    })
     return res.status(200).json(subproducts)
   } catch (err) {
     return res.status(400).json({ error: err.message })

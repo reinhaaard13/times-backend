@@ -15,7 +15,7 @@ const login = async (req, res) => {
 			},
       include: {
         model: db.Role,
-        attributes: ["role_id"],
+        attributes: ["role_id", "role_category"],
         include: {
           model: db.Privilege,
           attributes: ["privilege_id"]

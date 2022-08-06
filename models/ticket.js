@@ -9,6 +9,7 @@ module.exports = (sequelize, DataTypes) => (
     ticket_id: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true
     },
     location: {
       type: DataTypes.STRING,
@@ -38,10 +39,6 @@ module.exports = (sequelize, DataTypes) => (
       type: DataTypes.STRING,
       allowNull: false,
     },
-    department: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     casesubject: {
       type: DataTypes.INTEGER(4).ZEROFILL,
       allowNull: false,
@@ -49,10 +46,6 @@ module.exports = (sequelize, DataTypes) => (
     description: {
       type: DataTypes.TEXT,
       allowNull: false,
-    },
-    attachment: {
-      type: DataTypes.STRING,
-      // allowNull: false,
     },
     created_by: {
       type: DataTypes.INTEGER(11).ZEROFILL,
@@ -78,6 +71,13 @@ module.exports = (sequelize, DataTypes) => (
     },
     closed_date: {
       type: DataTypes.DATE,
+    },
+    created_by_dept: {
+      type: DataTypes.STRING,
+    },
+    private: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     }
   }, {
     createdAt: 'created_date',

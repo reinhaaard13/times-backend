@@ -23,12 +23,6 @@ module.exports = (sequelize, DataTypes) => {
 		{
 			createdAt: "created_date",
 			updatedAt: "modified_date",
-			// indexes: [
-			// 	{
-			// 		unique: false,
-			// 		fields: ["ticket_id"],
-			// 	}
-			// ]
 		}
 	);
 };

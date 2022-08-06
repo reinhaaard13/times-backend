@@ -14,6 +14,7 @@ const productsRoutes = require("./routes/products-routes");
 const subproductRoutes = require("./routes/subproducts-routes");
 const rolesRoutes = require("./routes/roles-routes");
 const subjectRoutes = require("./routes/subjects-routes");
+const notificationRoutes = require("./routes/notification-routes");
 
 const app = express();
 
@@ -24,16 +25,14 @@ app.use(
 		origin: "http://localhost:3000",
 	})
 );
+// app.use(cors());
 
 app.use(
 	"/uploads/attachments",
 	express.static(path.join(__dirname, "uploads", "attachments"))
 );
 
-app.use(
-	"/reports",
-	express.static(path.join(__dirname, "public", "reports"))
-);
+app.use("/reports", express.static(path.join(__dirname, "public", "reports")));
 
 app.use("/api/tickets", ticketsRoutes);
 
@@ -46,6 +45,8 @@ app.use("/api/subproducts", subproductRoutes);
 app.use("/api/roles", rolesRoutes);
 
 app.use("/api/subjects", subjectRoutes);
+
+app.use("/api/notification", notificationRoutes);
 
 const job = new CronJob(
 	"0 0 9 * * *",
@@ -68,8 +69,6 @@ db.sequelize.sync().then(() => {
 
 		// SLA Refresh
 		job.start();
-		console.log(
-			`Next Time Refreshing SLA: ${job.nextDate()}`
-		);
+		console.log(`Next Time Refreshing SLA: ${job.nextDate()}`);
 	});
 });

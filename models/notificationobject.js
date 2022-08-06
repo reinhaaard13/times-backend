@@ -16,5 +16,23 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER(4).ZEROFILL,
       allowNull: false,
     }
+  }, {
+    instanceMethods: {
+      getEntity: function(option) {
+        if (!this.entity_type) return Promise.resolve(null);
+        let mixinMethodName;
+        switch (this.entity_type) {
+          case "TICKET_CREATE":
+          case "TICKET_PROGRESS":
+          case "TICKET_CLOSED":
+            mixinMethodName = "getTicket";
+            break;
+          case "TICKET_COMMENT":
+            mixinMethodName = "getComment";
+            break;
+        }
+        return this[mixinMethodName](option);
+      }
+    }
   })
 }
