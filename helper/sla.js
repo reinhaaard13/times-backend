@@ -2,6 +2,9 @@ const db = require('../models')
 const moment = require('moment')
 const { SEVERITY } = require('./constants/severity')
 
+const Email = require('../services/email')
+const EmailService = new Email()
+
 module.exports.refresh = async () => {
   console.log("Refreshing SLA");
   const tickets = await db.Ticket.findAll({
@@ -23,6 +26,8 @@ module.exports.refresh = async () => {
     ticket.sla = sla
     await ticket.save()
   })
+
+  EmailService.sendReminderEmail(tickets);
 
   return tickets
 }

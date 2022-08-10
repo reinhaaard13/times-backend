@@ -5,6 +5,7 @@ const path = require("path");
 const CronJob = require("cron").CronJob;
 const { refresh, onComplete } = require("./helper/sla");
 const moment = require("moment");
+const logger = require("morgan")
 
 const db = require("./models");
 
@@ -15,22 +16,27 @@ const subproductRoutes = require("./routes/subproducts-routes");
 const rolesRoutes = require("./routes/roles-routes");
 const subjectRoutes = require("./routes/subjects-routes");
 const notificationRoutes = require("./routes/notification-routes");
+const emailRoutes = require("./routes/email-routes");
 
 const app = express();
 
 app.use(bodyParser.json());
+
+app.use(logger("dev"));
 
 app.use(
 	cors({
 		origin: "http://localhost:3000",
 	})
 );
-// app.use(cors());
 
 app.use(
 	"/uploads/attachments",
 	express.static(path.join(__dirname, "uploads", "attachments"))
 );
+
+app.set('view engine', 'ejs')
+app.set('views', path.join(__dirname, 'src', "views"))
 
 app.use("/reports", express.static(path.join(__dirname, "public", "reports")));
 
@@ -48,6 +54,8 @@ app.use("/api/subjects", subjectRoutes);
 
 app.use("/api/notification", notificationRoutes);
 
+app.use("/api/email", emailRoutes)
+
 const job = new CronJob(
 	"0 0 9 * * *",
 	refresh,
@@ -56,11 +64,12 @@ const job = new CronJob(
 	"Asia/Jakarta"
 );
 
-app.get("/api/sla/trigger", async (req, res, next) => {
+app.patch("/api/sla/trigger", async (req, res, next) => {
 	job.fireOnTick();
 	console.log("! On Trigger");
 	res.send("SLA refreshed");
 });
+
 
 // db.sequelize.sync({ alter: true }).then(() => {
 db.sequelize.sync().then(() => {

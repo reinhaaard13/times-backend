@@ -9,9 +9,51 @@ const { generateSLA } = require("../helper/sla");
 const generateReportPDF = require("../helper/generateReportPdf");
 const notificationController = require("./notification-controllers");
 
+const Email = require('../services/email')
+const EmailService = new Email()
+
 const getAllTickets = async (req, res) => {
 	const limit = +req.query.limit || 10;
 	const page = +req.query.page || 1;
+
+	const { sortBy, sortOrder, filter } = req.query;
+
+	// Filtering algorithm
+	const filterParse = JSON.parse(filter);
+	const where = {};
+	if (filterParse.product) {
+		where.product = parseInt(filterParse.product);
+	}
+	if (filterParse.status) {
+		where.status = filterParse.status;
+	}
+	if (filterParse.subject) {
+		where.casesubject = filterParse.subject;
+	}
+	if (filterParse.severity) {
+		where["$CaseSubject.severity$"] = filterParse.severity;
+	}
+	if (filterParse.sla) {
+		if (filterParse.sla === "OVERDUE") {
+			where.sla = { [Op.lt]: 0 };
+		} else {
+			where.sla = { [Op.lte]: parseInt(filterParse.sla) };
+		}
+	}
+
+	// Sorting algorithm
+	let order;
+	if (sortBy === "severity") {
+		order = ["CaseSubject", "severity"];
+	} else if (sortBy === "created_by") {
+		order = [{ model: db.User, as: "createdBy" }, "name"];
+	} else if (sortBy === "pic") {
+		order = [{ model: db.User, as: "pic" }, "name"];
+	} else if (sortBy === "subject") {
+		order = ["CaseSubject", "subject"];
+	} else if (sortBy === "product") {
+		order = ["Product", "product_name"];
+	}
 
 	try {
 		const { count, rows: tickets } = await db.Ticket.findAndCountAll({
@@ -22,21 +64,26 @@ const getAllTickets = async (req, res) => {
 				{ model: db.User, attributes: ["name"], as: "createdBy" },
 			],
 			where: {
-				[Op.or]: [
+				[Op.and]: [
+					where,
 					{
-						assigned_to:
-							req.userData.role !== "Administrator" &&
-							req.userData.role.split("_")[0],
-					},
-					{
-						created_by_dept:
-							req.userData.role !== "Administrator" &&
-							req.userData.role.split("_")[0],
+						[Op.or]: [
+							{
+								assigned_to:
+									req.userData.role !== "Administrator" &&
+									req.userData.role.split("_")[0],
+							},
+							{
+								created_by_dept:
+									req.userData.role !== "Administrator" &&
+									req.userData.role.split("_")[0],
+							},
+						],
 					},
 				],
 			},
 			limit,
-			order: [["created_date", "DESC"]],
+			order: order ? [[...order, sortOrder]] : [[sortBy, sortOrder]],
 			offset: (page - 1) * limit,
 		});
 
@@ -56,17 +103,6 @@ const getAllTickets = async (req, res) => {
 		const prevlink =
 			page > 1 ? `/api/tickets?limit=${limit}&page=${page - 1}` : null;
 
-		// setTimeout(() => {
-		// 	return res.status(200).json({
-		// 		tickets,
-		// 		total: tickets.length,
-		// 		limit,
-		// 		page,
-		// 		stats,
-		// 		next: nextlink,
-		// 		previous: prevlink,
-		// 	});
-		// }, 3000)
 		return res.status(200).json({
 			tickets,
 			total: tickets.length,
@@ -77,6 +113,7 @@ const getAllTickets = async (req, res) => {
 			previous: prevlink,
 		});
 	} catch (error) {
+		console.log(error);
 		return res.status(400).json({ error: error.message });
 	}
 };
@@ -170,6 +207,8 @@ const createTicket = async (req, res) => {
 
 		await trx.commit();
 
+		EmailService.sendTicketCreatedEmail(newTicket);
+
 		return res.status(200).json({ newTicket });
 	} catch (error) {
 		console.log(error);
@@ -192,6 +231,7 @@ const getTicketById = async (req, res) => {
 				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
 				{ model: db.User, attributes: ["name"], as: "pic" },
 				{ model: db.User, attributes: ["name"], as: "createdBy" },
+				{ model: db.Attachment, attributes: ["attachment_url"] },
 			],
 		});
 
@@ -231,8 +271,7 @@ const deleteTicketById = async (req, res) => {
 			fs.unlinkSync(attachment.attachment_url);
 			await attachment.destroy({ transaction: trx });
 		}),
-
-		await ticket.destroy({ transaction: trx });
+			await ticket.destroy({ transaction: trx });
 
 		await trx.commit();
 		return res.status(200).json({ message: "Ticket deleted" });
@@ -272,14 +311,17 @@ const modifyTicketStatus = async (req, res) => {
 			ticket.sla = null;
 
 			await notificationController.makeNotification(ticket, "TICKET_CLOSED");
+			EmailService.sendTicketClosedEmail(ticket);
 		} else if (status === "PROGRESS") {
 			ticket.status = status;
 			ticket.pic_id = req.userData.id;
 
 			await notificationController.makeNotification(ticket, "TICKET_PROGRESS");
+			EmailService.sendTicketTakenEmail(ticket);
 		}
 
 		await ticket.save();
+
 		return res.status(200).json({ ticket });
 	} catch (err) {
 		return res.status(400).json({ error: err.message });
@@ -333,12 +375,43 @@ const getTicketsReport = async (req, res) => {
 
 	let tickets;
 
+	// Filtering algorithm
+	const filterParse = JSON.parse(req.query.filter);
+	const where = {};
+	if (filterParse.product) {
+		where.product = parseInt(filterParse.product);
+	}
+	if (filterParse.status) {
+		where.status = filterParse.status;
+	}
+	if (filterParse.subject) {
+		where.casesubject = parseInt(filterParse.subject);
+	}
+	if (filterParse.deptfrom) {
+		where.created_by_dept = filterParse.deptfrom;
+	}
+	if (filterParse.deptto) {
+		where.assigned_to = filterParse.deptto;
+	}
+	if (filterParse.sla) {
+		if (filterParse.sla === "OVERDUE") {
+			where.sla = { [Op.lt]: 0 };
+		} else {
+			where.sla = { [Op.lte]: parseInt(filterParse.sla) };
+		}
+	}
+
 	try {
-		tickets = await db.Ticket.findAll({
+		tickets = await db.Ticket.scope("reportable").findAll({
 			where: {
-				created_date: {
-					[Op.between]: [start, end],
-				},
+				[Op.and]: [
+					{
+						created_date: {
+							[Op.between]: [start, end],
+						},
+					},
+					where,
+				],
 			},
 			include: [
 				{ model: db.Product, attributes: ["product_name"] },
@@ -348,7 +421,26 @@ const getTicketsReport = async (req, res) => {
 			],
 		});
 
-		const doc = await generateReportPDF(tickets, start, end);
+		const casesubject_subject =
+			where.casesubject &&
+			(await db.CaseSubject.findByPk(where.casesubject).then(
+				(subject) => subject.subject
+			));
+
+		const product_name =
+			where.product &&
+			(await db.Product.findByPk(where.product).then(
+				(product) => product.product_name
+			));
+
+		const doc = await generateReportPDF(
+			tickets,
+			start,
+			end,
+			filterParse,
+			casesubject_subject,
+			product_name
+		);
 
 		doc.pipe(res);
 		// return res.status(200).json({ filename });
@@ -360,18 +452,28 @@ const getTicketsReport = async (req, res) => {
 const getFilterParameters = async (req, res) => {
 	try {
 		const products = await db.Product.findAll({
-			attributes: ['product_id', "product_name"]
+			attributes: [
+				["product_id", "option_value"],
+				["product_name", "option_name"],
+			],
 		});
 		const casesubjects = await db.CaseSubject.findAll({
-			attributes: ['id', "subject"]
+			attributes: [
+				["id", "option_value"],
+				["subject", "option_name"],
+			],
+		});
+		const departments = await db.Role.findAll({
+			attributes: [["role_category", "option_value"]],
+			group: ["role_category"],
 		});
 
-		return res.status(200).json({ products, casesubjects });
+		return res.status(200).json({ products, casesubjects, departments });
 	} catch (err) {
 		console.log(err);
 		return res.status(400).json({ error: err.message });
 	}
-}
+};
 
 module.exports = {
 	getAllTickets,
@@ -382,5 +484,5 @@ module.exports = {
 	createTicketComment,
 	getTicketsReport,
 	deleteTicketById,
-	getFilterParameters
+	getFilterParameters,
 };

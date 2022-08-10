@@ -1,0 +1,51 @@
+<%- include('./header.ejs') %>
+<div class="container">
+	<h4>Your help is in need!</h4>
+	<hr />
+	<p class="email_body">
+		You have
+		<span style="font-weight: 600"
+			><%= progressTicketsCount %> ticket(s) in progress</span
+		>
+		and
+		<span style="font-weight: 600"><%= openTicketsCount %> ticket(s) open</span>
+		approaching due date. Take a look and give it a hand.
+	</p>
+	<% if (progressTickets.length > 0) { %>
+	<p style="margin-top: 10px; font-weight: 600; color: #62990f">Your Ticket</p>
+	<ul>
+		<% progressTickets.forEach(ticket => { %>
+		<li style="list-style-position: inside; font-size: 14px">
+			<a
+				href="https://times-ticketing.vercel.app/"
+				target="_blank"
+				style="color: #333"
+			>
+				<%= ticket.ticket_id %> - <%= ticket.CaseSubject.subject %> - <%=
+				ticket.sla %> days - <%= ticket.status %>
+			</a>
+		</li>
+		<% }) %>
+	</ul>
+	<% } %> <% if (openTickets.length > 0) { %>
+	<p style="margin-top: 10px; font-weight: 600; color: #62990f">
+		Ticket Still Open
+	</p>
+	<ul>
+		<% openTickets.forEach(ticket => { %>
+
+		<li style="list-style-position: inside; font-size: 14px">
+			<a
+				href="https://times-ticketing.vercel.app/"
+				target="_blank"
+				style="color: #333"
+			>
+				<%= ticket.ticket_id %> - <%= ticket.CaseSubject.subject %> - <%=
+				ticket.sla %> days - <%= ticket.status %>
+			</a>
+		</li>
+		<% }) %>
+	</ul>
+	<% } %>
+</div>
+<%- include('./footer.ejs') %>

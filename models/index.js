@@ -229,6 +229,13 @@ db.NotificationObject.addHook("afterFind", (findResult) => {
 	}
 });
 
+// Scopes
+db.Ticket.addScope("reportable", {
+	where: {
+		private: 0
+	}
+})
+
 Object.keys(db).forEach((modelName) => {
 	if (db[modelName].associate) {
 		db[modelName].associate(db);

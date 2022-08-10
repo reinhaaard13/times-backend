@@ -16,7 +16,7 @@ router.post(
 
 router.get('/report', ticketsControllers.getTicketsReport)
 
-router.get('/filterParam', ticketsControllers.getFilterParameters)
+router.get('/filters', ticketsControllers.getFilterParameters)
 
 router.get("/:id", ticketsControllers.getTicketById)
 

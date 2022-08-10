@@ -5,7 +5,11 @@ const moment = require("moment");
 
 const { SEVERITY } = require("../helper/constants/severity");
 
-module.exports = async (tickets, start, end) => {
+const capitalize = (query) => {
+	return query.charAt(0).toUpperCase() + query.slice(1).toLowerCase();
+};
+
+module.exports = async (tickets, start, end, filter, casesubject, product) => {
 	let doc = new PDFDocument({
 		margin: 30,
 		size: "A4",
@@ -17,11 +21,29 @@ module.exports = async (tickets, start, end) => {
 	// 	fs.createWriteStream(path.join("public", "reports", `${filename}.pdf`))
 	// );
 
+	const filterlist = Object.keys(filter).map((field) => {
+		if (field === "sla" && field.length > 0) {
+			return `${capitalize(field)}: within ${filter[field]} days`;
+		} else if (field === "product" && field.length > 0) {
+			return `${capitalize(field)}: ${product || filter[field]}`;
+		} else if (field === "status" && field.length > 0) {
+			return `${capitalize(field)}: ${filter[field]}`;
+		} else if (field === "subject" && field.length > 0) {
+			return `${capitalize(field)}: ${casesubject || filter[field]}`;
+		} else if (field === "deptfrom" && field.length > 0) {
+			return `Created by department: ${filter[field]}`;
+		} else if (field === "deptto" && field.length > 0) {
+			return `Assigned to department: ${filter[field]}`;
+		}
+	});
+
 	const table = {
 		title: "Times Report",
 		subtitle: `issued at ${moment().format("LLLL")}\nFrom: ${moment(
 			start
-		).format("llll")} to ${moment(end).format("llll")}\n`,
+		).format("llll")} to ${moment(end).format(
+			"llll"
+		)}\nFilters Applied:\n${filterlist.join("\n")}`,
 		headers: [
 			{ label: "No.", property: "no", width: 20 },
 			{ label: "Ticket ID", property: "ticket_id", width: 40 },

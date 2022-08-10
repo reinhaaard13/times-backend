@@ -1,0 +1,22 @@
+<%- include('./header') %>
+<div class="container">
+  <h4>A new ticket has been created for <%= assigned_to %> Department</h4>
+  <hr />
+  <p class="email_body">
+    A new ticket has been created for your department. Ticket detail is:
+  </p>
+  <div class="ticket_detail">
+    <ul>
+      <li>Ticket ID : <span><%= ticket_id %></span></li>
+      <li>Severity : <span><%= severity %></span></li>
+      <li>Product : <span><%= product %></span></li>
+      <li>Subproduct : <span><%= subproduct %></span></li>
+      <li>Name : <span><%= name %></span></li>
+      <li>Phone : <span><%= phone %></span></li>
+      <li>Event Location : <span><%= location %></span></li>
+      <li>Created At : <span><%= created_date %></span></li>
+      <li>Case Subject : <span><%= case_subject %></span></li>
+    </ul>
+  </div>
+</div>
+<%- include('./footer') %>
