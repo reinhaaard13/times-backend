@@ -15,17 +15,17 @@ module.exports.refresh = async () => {
       { model: db.CaseSubject, attributes: ["subject", "severity"]}
     ]
   })
-  tickets.forEach(async ticket => {
+  for (const ticket of tickets) {
     const deadline = moment(ticket.created_date).add(
       SEVERITY.find(s => s.label === ticket.CaseSubject.severity ).handle_in,
       "days"
     )
-
+  
     const sla = deadline.diff(moment(), "days")
-
+  
     ticket.sla = sla
     await ticket.save()
-  })
+  }
 
   EmailService.sendReminderEmail(tickets);
 

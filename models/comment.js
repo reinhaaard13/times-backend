@@ -19,6 +19,10 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: false,
 			},
+			attachment_id: {
+				type: DataTypes.INTEGER(4).ZEROFILL,
+				allowNull: true,
+			},
 		},
 		{
 			createdAt: "created_date",

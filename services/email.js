@@ -51,10 +51,11 @@ class EmailService {
 			});
 		} else if (type === "reminder") {
 			html = await ejs.renderFile("src/views/content_reminder.ejs", {
-				openTicketsCount: data.openTickets.length,
-				progressTicketsCount: data.progressTickets.length,
+				openTicketsCount: data.openTickets?.length,
+				progressTicketsCount: data.progressTickets?.length,
 				openTickets: data.openTickets,
 				progressTickets: data.progressTickets,
+				departmentOpenTickets: data.departmentOpenTickets,
 			});
 		}
 		return html;
@@ -183,6 +184,23 @@ class EmailService {
 			users = users.concat(user);
 		}
 
+		let authorDepartments = tickets.map(ticket => ticket.created_by_dept);
+		authorDepartments = Array.from(new Set(authorDepartments));
+		for (const department of authorDepartments) {
+			const authorDeptUsers = await db.User.findAll({
+				where: {
+					"$Role.role_category$": department,
+				},
+				include: [{ model: db.Role, attributes: ["role_category"] }],
+			});
+
+			authorDeptUsers.forEach(user => {
+				if (users.find(u => u.user_id === user.user_id) === undefined) {
+					users.push(user);
+				}
+			})
+		}
+		
 		tickets.forEach(async (ticket) => {
 			const user = await ticket.getPic({
 				include: [{ model: db.Role, attributes: ["role_category"] }],
@@ -211,6 +229,14 @@ class EmailService {
 					ticket.status === "PROGRESS" && ticket.pic_id === user.user_id
 			);
 
+			let departmentOpenTickets
+			if (authorDepartments.includes(user.Role.role_category)) {
+				departmentOpenTickets = tickets.filter(
+					(ticket) =>
+						ticket.created_by_dept === user.Role.role_category
+				);
+			}
+
 			return this.transporter.sendMail(
 				{
 					from: process.env.GMAIL_ACCOUNT,
@@ -219,6 +245,7 @@ class EmailService {
 					html: await this.generateHTML("reminder", {
 						openTickets,
 						progressTickets,
+						departmentOpenTickets,
 					}),
 				},
 				(err, info) => {

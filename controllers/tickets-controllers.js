@@ -9,8 +9,8 @@ const { generateSLA } = require("../helper/sla");
 const generateReportPDF = require("../helper/generateReportPdf");
 const notificationController = require("./notification-controllers");
 
-const Email = require('../services/email')
-const EmailService = new Email()
+const Email = require("../services/email");
+const EmailService = new Email();
 
 const getAllTickets = async (req, res) => {
 	const limit = +req.query.limit || 10;
@@ -18,26 +18,30 @@ const getAllTickets = async (req, res) => {
 
 	const { sortBy, sortOrder, filter } = req.query;
 
+	let filterParse;
+	let where = {};
 	// Filtering algorithm
-	const filterParse = JSON.parse(filter);
-	const where = {};
-	if (filterParse.product) {
-		where.product = parseInt(filterParse.product);
-	}
-	if (filterParse.status) {
-		where.status = filterParse.status;
-	}
-	if (filterParse.subject) {
-		where.casesubject = filterParse.subject;
-	}
-	if (filterParse.severity) {
-		where["$CaseSubject.severity$"] = filterParse.severity;
-	}
-	if (filterParse.sla) {
-		if (filterParse.sla === "OVERDUE") {
-			where.sla = { [Op.lt]: 0 };
-		} else {
-			where.sla = { [Op.lte]: parseInt(filterParse.sla) };
+	if (filter) {
+		filterParse = JSON.parse(filter);
+		// where = {};
+		if (filterParse.product) {
+			where.product = parseInt(filterParse.product);
+		}
+		if (filterParse.status) {
+			where.status = filterParse.status;
+		}
+		if (filterParse.subject) {
+			where.casesubject = filterParse.subject;
+		}
+		if (filterParse.severity) {
+			where["$CaseSubject.severity$"] = filterParse.severity;
+		}
+		if (filterParse.sla) {
+			if (filterParse.sla === "OVERDUE") {
+				where.sla = { [Op.lt]: 0 };
+			} else {
+				where.sla = { [Op.lte]: parseInt(filterParse.sla) };
+			}
 		}
 	}
 
@@ -83,13 +87,16 @@ const getAllTickets = async (req, res) => {
 				],
 			},
 			limit,
-			order: order ? [[...order, sortOrder]] : [[sortBy, sortOrder]],
+			order: order
+				? [[...order, sortOrder || "asc"]]
+				: [[sortBy || "created_date", sortOrder || "desc"]],
 			offset: (page - 1) * limit,
 		});
 
-		const allTickets = await db.Ticket.findAll();
+		const { count: countAll, rows: allTickets } =
+			await db.Ticket.findAndCountAll();
 		const stats = {
-			total: count,
+			total: countAll,
 			open: allTickets.filter((ticket) => ticket.status === "OPEN").length,
 			closed: allTickets.filter((ticket) => ticket.status === "CLOSED").length,
 			progress: allTickets.filter((ticket) => ticket.status === "PROGRESS")
@@ -105,7 +112,7 @@ const getAllTickets = async (req, res) => {
 
 		return res.status(200).json({
 			tickets,
-			total: tickets.length,
+			total: countAll,
 			limit,
 			page,
 			stats,
@@ -336,7 +343,10 @@ const getTicketComments = async (req, res) => {
 			where: {
 				ticket_id: id,
 			},
-			include: [{ model: db.User, attributes: ["name"] }],
+			include: [
+				{ model: db.User, attributes: ["name"] },
+				{ model: db.Attachment, attributes: ["attachment_url"] },
+			],
 		});
 		// setTimeout(() => {
 		return res.status(200).json({ comments });
@@ -351,20 +361,58 @@ const createTicketComment = async (req, res) => {
 	const { comment_body } = req.body;
 	const user = req.userData.id;
 
+	const trx = await db.sequelize.transaction();
+
 	// Check if ticket user is the PIC of the ticket
+	const ticket = await db.Ticket.findOne({
+		where: {
+			ticket_id: id,
+		},
+		attributes: ["pic_id", "created_by"]
+	})
+	console.log(user, ticket.pic_id)
+	console.log(user, ticket.created_by)
+	console.log(ticket.pic_id !== user && ticket.created_by !== user);
+	if (ticket.pic_id !== user && ticket.created_by !== user) {
+		return res.status(401).json({ error: "Unauthorized" });
+	}
+
+	const file = req.file;
+	console.log(file);
 
 	// Add Comment
 	try {
-		const comment = await db.Comment.create({
-			comment_body,
-			ticket_id: id,
-			user_id: user,
-		});
+		const comment = await db.Comment.create(
+			{
+				comment_body,
+				ticket_id: id,
+				user_id: user,
+			},
+			{
+				transaction: trx,
+			}
+		);
+
+		let attachment;
+		if (file) {
+			attachment = await comment.createAttachment(
+				{
+					attachment_url: file.path,
+					ticket_id: id,
+				},
+				{
+					transaction: trx,
+				}
+			);
+		}
+
+		await trx.commit();
 
 		await notificationController.makeNotification(comment, "TICKET_COMMENT");
 
-		return res.status(201).json({ comment });
+		return res.status(201).json({ comment, attachment });
 	} catch (err) {
+		await trx.rollback();
 		return res.status(400).json({ error: err.message });
 	}
 };
@@ -376,28 +424,30 @@ const getTicketsReport = async (req, res) => {
 	let tickets;
 
 	// Filtering algorithm
-	const filterParse = JSON.parse(req.query.filter);
-	const where = {};
-	if (filterParse.product) {
-		where.product = parseInt(filterParse.product);
-	}
-	if (filterParse.status) {
-		where.status = filterParse.status;
-	}
-	if (filterParse.subject) {
-		where.casesubject = parseInt(filterParse.subject);
-	}
-	if (filterParse.deptfrom) {
-		where.created_by_dept = filterParse.deptfrom;
-	}
-	if (filterParse.deptto) {
-		where.assigned_to = filterParse.deptto;
-	}
-	if (filterParse.sla) {
-		if (filterParse.sla === "OVERDUE") {
-			where.sla = { [Op.lt]: 0 };
-		} else {
-			where.sla = { [Op.lte]: parseInt(filterParse.sla) };
+	let filterParse = {};
+	let where = {};
+	// Filtering algorithm
+	if (req.query.filter) {
+		filterParse = JSON.parse(req.query.filter);
+		// where = {};
+		if (filterParse.product) {
+			where.product = parseInt(filterParse.product);
+		}
+		if (filterParse.status) {
+			where.status = filterParse.status;
+		}
+		if (filterParse.subject) {
+			where.casesubject = filterParse.subject;
+		}
+		if (filterParse.severity) {
+			where["$CaseSubject.severity$"] = filterParse.severity;
+		}
+		if (filterParse.sla) {
+			if (filterParse.sla === "OVERDUE") {
+				where.sla = { [Op.lt]: 0 };
+			} else {
+				where.sla = { [Op.lte]: parseInt(filterParse.sla) };
+			}
 		}
 	}
 
@@ -475,6 +525,8 @@ const getFilterParameters = async (req, res) => {
 	}
 };
 
+const addNewAttachment = async (req, res) => {};
+
 module.exports = {
 	getAllTickets,
 	createTicket,
@@ -485,4 +537,5 @@ module.exports = {
 	getTicketsReport,
 	deleteTicketById,
 	getFilterParameters,
+	addNewAttachment,
 };

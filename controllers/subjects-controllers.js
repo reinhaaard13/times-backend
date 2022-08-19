@@ -20,12 +20,13 @@ const getAllSubjects = async (req, res) => {
 };
 
 const createNewSubject = async (req, res) => {
-	const { subject, severity } = req.body;
+	const { subject, severity, subproduct_id } = req.body;
 
 	try {
 		const newSubject = await db.CaseSubject.create({
 			subject,
 			severity,
+			subproduct_id
 		});
 		return res.status(200).json(newSubject);
 	} catch (err) {

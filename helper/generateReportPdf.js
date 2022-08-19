@@ -21,19 +21,21 @@ module.exports = async (tickets, start, end, filter, casesubject, product) => {
 	// 	fs.createWriteStream(path.join("public", "reports", `${filename}.pdf`))
 	// );
 
-	const filterlist = Object.keys(filter).map((field) => {
-		if (field === "sla" && field.length > 0) {
-			return `${capitalize(field)}: within ${filter[field]} days`;
-		} else if (field === "product" && field.length > 0) {
-			return `${capitalize(field)}: ${product || filter[field]}`;
-		} else if (field === "status" && field.length > 0) {
-			return `${capitalize(field)}: ${filter[field]}`;
-		} else if (field === "subject" && field.length > 0) {
-			return `${capitalize(field)}: ${casesubject || filter[field]}`;
-		} else if (field === "deptfrom" && field.length > 0) {
-			return `Created by department: ${filter[field]}`;
-		} else if (field === "deptto" && field.length > 0) {
-			return `Assigned to department: ${filter[field]}`;
+	let filterlist = []
+	
+	Object.keys(filter).forEach((field) => {
+		if (field === "sla") {
+			filterlist.push(`${capitalize(field)}: within ${filter[field]} days`);
+		} else if (field === "product") {
+			filterlist.push(`${capitalize(field)}: ${product || filter[field]}`);
+		} else if (field === "status") {
+			filterlist.push(`${capitalize(field)}: ${filter[field]}`);
+		} else if (field === "subject") {
+			filterlist.push(`${capitalize(field)}: ${casesubject || filter[field]}`);
+		} else if (field === "deptfrom") {
+			filterlist.push(`Created by department: ${filter[field]}`);
+		} else if (field === "deptto") {
+			filterlist.push(`Assigned to department: ${filter[field]}`);
 		}
 	});
 
@@ -43,16 +45,16 @@ module.exports = async (tickets, start, end, filter, casesubject, product) => {
 			start
 		).format("llll")} to ${moment(end).format(
 			"llll"
-		)}\nFilters Applied:\n${filterlist.join("\n")}`,
+		)}\n${filterlist.length > 0 ? "Filters Applied:" : ""}\n${filterlist.join("\n")}`,
 		headers: [
 			{ label: "No.", property: "no", width: 20 },
 			{ label: "Ticket ID", property: "ticket_id", width: 40 },
 			{ label: "Product", property: "product", width: 80 },
-			{ label: "Status", property: "status", width: 50 },
 			{ label: "Event Location", property: "location", width: 80 },
 			{ label: "Subject", property: "casesubject", width: 90 },
 			{ label: "Created At", property: "created_date", width: 70 },
 			{ label: "Severity", property: "severity", width: 50 },
+			{ label: "Status", property: "status", width: 50 },
 			{ label: "SLA", property: "sla", width: 50 },
 		],
 		datas: tickets.map((ticket, idx) => {
@@ -68,7 +70,14 @@ module.exports = async (tickets, start, end, filter, casesubject, product) => {
 					SEVERITY.find((s) => s.label === ticket.CaseSubject.severity)
 						.handle_in
 				} days`,
-				sla: ticket.sla ? `${ticket.sla} day(s)` : `Completed`,
+				sla:
+					ticket.sla > 0
+						? `Due in ${ticket.sla} day(s)`
+						: ticket.sla < 0
+						? `${Math.abs(ticket.sla)} day(s) passed due`
+						: ticket.sla === 0
+						? `Today`
+						: `No SLA`,
 			};
 		}),
 	};

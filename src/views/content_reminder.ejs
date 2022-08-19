@@ -11,7 +11,7 @@
 		<span style="font-weight: 600"><%= openTicketsCount %> ticket(s) open</span>
 		approaching due date. Take a look and give it a hand.
 	</p>
-	<% if (progressTickets.length > 0) { %>
+	<% if (progressTickets?.length > 0) { %>
 	<p style="margin-top: 10px; font-weight: 600; color: #62990f">Your Ticket</p>
 	<ul>
 		<% progressTickets.forEach(ticket => { %>
@@ -21,15 +21,15 @@
 				target="_blank"
 				style="color: #333"
 			>
-				<%= ticket.ticket_id %> - <%= ticket.CaseSubject.subject %> - <%=
-				ticket.sla %> days - <%= ticket.status %>
+				<%= ticket.ticket_id %> - <%= ticket.CaseSubject.subject %> - <%= ticket.sla > 0 ? `${ticket.sla} days` : ticket.sla < 0 ? `${Math.abs(ticket.sla)} days passed due` : `Due Today` %> - <%= ticket.status %>
 			</a>
 		</li>
 		<% }) %>
 	</ul>
-	<% } %> <% if (openTickets.length > 0) { %>
+	<% } %>
+	<% if (openTickets?.length > 0) { %>
 	<p style="margin-top: 10px; font-weight: 600; color: #62990f">
-		Ticket Still Open
+		Open Tickets For <%= openTickets[0].assigned_to %> Department
 	</p>
 	<ul>
 		<% openTickets.forEach(ticket => { %>
@@ -40,12 +40,30 @@
 				target="_blank"
 				style="color: #333"
 			>
-				<%= ticket.ticket_id %> - <%= ticket.CaseSubject.subject %> - <%=
-				ticket.sla %> days - <%= ticket.status %>
+				<%= ticket.ticket_id %> - <%= ticket.CaseSubject.subject %> - <%= ticket.sla > 0 ? `${ticket.sla} days` : ticket.sla < 0 ? `${Math.abs(ticket.sla)} days passed due` : `Due Today` %> - <%= ticket.status %>
 			</a>
 		</li>
 		<% }) %>
 	</ul>
 	<% } %>
+	<% if (departmentOpenTickets.length > 0) { %>
+		<p style="margin-top: 10px; font-weight: 600; color: #62990f">
+			Ticket from <%= departmentOpenTickets[0].created_by_dept %> department approaching due
+		</p>
+		<ul>
+			<% departmentOpenTickets.forEach(ticket => { %>
+	
+			<li style="list-style-position: inside; font-size: 14px">
+				<a
+				href="https://times-ticketing.vercel.app/"
+				target="_blank"
+				style="color: #333"
+			>
+				<%= ticket.ticket_id %> - <%= ticket.CaseSubject.subject %> - <%= ticket.sla > 0 ? `${ticket.sla} days` : ticket.sla < 0 ? `${Math.abs(ticket.sla)} days passed due` : `Due Today` %> - <%= ticket.status %>
+			</a>
+			</li>
+			<% }) %>
+		</ul>
+		<% } %>
 </div>
 <%- include('./footer.ejs') %>

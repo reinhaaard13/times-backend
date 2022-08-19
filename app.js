@@ -25,9 +25,7 @@ app.use(bodyParser.json());
 app.use(logger("dev"));
 
 app.use(
-	cors({
-		origin: "http://localhost:3000",
-	})
+	cors()
 );
 
 app.use(
