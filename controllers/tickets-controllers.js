@@ -370,9 +370,6 @@ const createTicketComment = async (req, res) => {
 		},
 		attributes: ["pic_id", "created_by"]
 	})
-	console.log(user, ticket.pic_id)
-	console.log(user, ticket.created_by)
-	console.log(ticket.pic_id !== user && ticket.created_by !== user);
 	if (ticket.pic_id !== user && ticket.created_by !== user) {
 		return res.status(401).json({ error: "Unauthorized" });
 	}

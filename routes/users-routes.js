@@ -10,7 +10,9 @@ router.get('/', (req, res) => {
 
 router.post('/login', userController.login);
 
-router.post('/register', userController.register)
+router.post('/register', userController.register);
+
+router.post("/refreshToken", userController.refreshToken)
 
 router.get('/notification', checkAuth, notificationController.getUserNotification)
 
