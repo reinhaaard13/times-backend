@@ -6,14 +6,14 @@ const EmailService = require("../services/email");
 const db = require('../models');
 
 const generateHTML = async (type, payload) => {
-  const ticket = await db.Ticket.findOne({
+  const ticket = await db.ticket.Ticket.findOne({
     where: {
       status: "OPEN"
     },
     include: [
-      { model: db.CaseSubject, attributes: ["severity", "subject"] },
-      { model: db.Product, attributes: ["product_name"] },
-      { model: db.Subproduct, attributes: ["subproduct_name"] },
+      { model: db.ticket.CaseSubject, attributes: ["severity", "subject"] },
+      { model: db.ticket.Product, attributes: ["product_name"] },
+      { model: db.ticket.Subproduct, attributes: ["subproduct_name"] },
     ]
   })
 

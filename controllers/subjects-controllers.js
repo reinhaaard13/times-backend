@@ -2,13 +2,13 @@ const db = require("../models");
 
 const getAllSubjects = async (req, res) => {
 	try {
-		const subjects = await db.CaseSubject.findAll({
+		const subjects = await db.ticket.CaseSubject.findAll({
 			include: [
 				{
-					model: db.Subproduct,
+					model: db.ticket.Subproduct,
 					attributes: ["subproduct_name", "subproduct_id"],
 					include: [
-						{ model: db.Product, attributes: ["product_name", "product_id"] },
+						{ model: db.ticket.Product, attributes: ["product_name", "product_id"] },
 					],
 				},
 			],
@@ -23,7 +23,7 @@ const createNewSubject = async (req, res) => {
 	const { subject, severity, subproduct_id } = req.body;
 
 	try {
-		const newSubject = await db.CaseSubject.create({
+		const newSubject = await db.ticket.CaseSubject.create({
 			subject,
 			severity,
 			subproduct_id
@@ -38,13 +38,13 @@ const getSubjectById = async (req, res) => {
 	const { id } = req.params;
 
 	try {
-		const subject = await db.CaseSubject.findByPk(id, {
+		const subject = await db.ticket.CaseSubject.findByPk(id, {
 			include: [
 				{
-					model: db.Subproduct,
+					model: db.ticket.Subproduct,
 					attributes: ["subproduct_name", "subproduct_id"],
 					include: [
-						{ model: db.Product, attributes: ["product_name", "product_id"] },
+						{ model: db.ticket.Product, attributes: ["product_name", "product_id"] },
 					],
 				},
 			],
@@ -59,7 +59,7 @@ const updateSubjectById = async (req, res) => {
 	const { id } = req.params;
 
 	try {
-		const subject = await db.CaseSubject.update(req.body, {
+		const subject = await db.ticket.CaseSubject.update(req.body, {
 			where: {
 				id,
 			},
@@ -74,7 +74,7 @@ const deleteSubjectById = async (req, res) => {
 	const { id } = req.params;
 
 	try {
-		const subject = await db.CaseSubject.destroy({
+		const subject = await db.ticket.CaseSubject.destroy({
 			where: {
 				id,
 			},

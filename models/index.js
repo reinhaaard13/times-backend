@@ -1,184 +1,151 @@
-"use strict";
+const db_auth = require('./auth');
+const db_ticket = require('./ticket');
 
-const fs = require("fs");
-const path = require("path");
-const Sequelize = require("sequelize");
 const { Op } = require("sequelize");
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || "development";
-const config = require(__dirname + "/../config/config.json")[env];
-const db = {};
-
-let sequelize;
-if (config.use_env_variable) {
-	sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-	sequelize = new Sequelize(
-		config.database,
-		config.username,
-		config.password,
-		config
-	);
-}
-
-fs.readdirSync(__dirname)
-	.filter((file) => {
-		return (
-			file.indexOf(".") !== 0 && file !== basename && file.slice(-3) === ".js"
-			);
-		})
-	.forEach((file) => {
-		// console.log(file);
-		const model = require(path.join(__dirname, file))(
-			sequelize,
-			Sequelize.DataTypes
-		);
-		db[model.name] = model;
-	});
 
 // Ticket Associations
-db.Ticket.belongsTo(db.CaseSubject, {
+db_ticket.Ticket.belongsTo(db_ticket.CaseSubject, {
 	foreignKey: "casesubject",
 	targetKey: "id",
 });
-db.Ticket.belongsTo(db.Product, {
+db_ticket.Ticket.belongsTo(db_ticket.Product, {
 	foreignKey: "product",
 	targetKey: "product_id",
 });
-db.Ticket.belongsTo(db.Subproduct, {
+db_ticket.Ticket.belongsTo(db_ticket.Subproduct, {
 	foreignKey: "subproduct",
 	targetKey: "subproduct_id",
 });
-db.Ticket.hasMany(db.Comment, {
+db_ticket.Ticket.hasMany(db_ticket.Comment, {
 	foreignKey: "ticket_id",
 	sourceKey: "ticket_id",
 });
-db.Ticket.belongsTo(db.User, {
+db_ticket.Ticket.belongsTo(db_auth.User, {
 	foreignKey: "pic_id",
 	targetKey: "user_id",
 	as: "pic",
 });
-db.Ticket.belongsTo(db.User, {
+db_ticket.Ticket.belongsTo(db_auth.User, {
 	foreignKey: "created_by",
 	targetKey: "user_id",
 	as: "createdBy",
 });
 
 // Attachment Associations
-db.Attachment.belongsTo(db.Ticket, {
+db_ticket.Attachment.belongsTo(db_ticket.Ticket, {
 	foreignKey: "ticket_id",
 	targetKey: "ticket_id",
 })
-db.Ticket.hasMany(db.Attachment, {
+db_ticket.Ticket.hasMany(db_ticket.Attachment, {
 	foreignKey: "ticket_id",
 	sourceKey: "ticket_id",
 })
 
-db.Attachment.hasOne(db.Comment, {
+db_ticket.Attachment.hasOne(db_ticket.Comment, {
 	foreignKey: "attachment_id",
 })
-db.Comment.belongsTo(db.Attachment, {
+db_ticket.Comment.belongsTo(db_ticket.Attachment, {
 	foreignKey: "attachment_id",
 })
 
 // User Associations
-db.User.hasMany(db.Ticket, {
+db_auth.User.hasMany(db_ticket.Ticket, {
 	foreignKey: "pic_id",
 	sourceKey: "user_id",
 	as: "pic",
 });
-db.User.hasMany(db.Ticket, {
+db_auth.User.hasMany(db_ticket.Ticket, {
 	foreignKey: "pic_id",
 	sourceKey: "user_id",
 	as: "createdBy",
 });
 
 // User Associations
-db.User.belongsTo(db.Role, { foreignKey: "role", targetKey: "role_id" });
-db.Role.hasMany(db.User, { foreignKey: "role", sourceKey: "role_id" });
+db_auth.User.belongsTo(db_auth.Role, { foreignKey: "role", targetKey: "role_id" });
+db_auth.Role.hasMany(db_auth.User, { foreignKey: "role", sourceKey: "role_id" });
 
 // Role Privilege Associations
-db.Privilege.belongsToMany(db.Role, {
-	through: db.RolePrivilege,
+db_auth.Privilege.belongsToMany(db_auth.Role, {
+	through: db_auth.RolePrivilege,
 	foreignKey: "privilege_id",
 	otherKey: "role_id",
 });
-db.Role.belongsToMany(db.Privilege, {
-	through: db.RolePrivilege,
+db_auth.Role.belongsToMany(db_auth.Privilege, {
+	through: db_auth.RolePrivilege,
 	foreignKey: "role_id",
 	otherKey: "privilege_id",
 });
 
 // Product Associations
-db.Product.hasMany(db.Subproduct, {
+db_ticket.Product.hasMany(db_ticket.Subproduct, {
 	foreignKey: "product_id",
 	sourceKey: "product_id",
 });
 
 // Subproduct Associations
-db.Subproduct.belongsTo(db.Product, {
+db_ticket.Subproduct.belongsTo(db_ticket.Product, {
 	foreignKey: "product_id",
 	targetKey: "product_id",
 });
 
 // CaseSubject Associations
-db.CaseSubject.belongsTo(db.Subproduct, {
+db_ticket.CaseSubject.belongsTo(db_ticket.Subproduct, {
 	foreignKey: "subproduct_id",
 	targetKey: "subproduct_id",
 })
-db.Subproduct.hasMany(db.CaseSubject, {
+db_ticket.Subproduct.hasMany(db_ticket.CaseSubject, {
 	foreignKey: "subproduct_id",
 	sourceKey: "subproduct_id",
 })
 
 // Comments Associations
-db.Comment.belongsTo(db.User, {
+db_ticket.Comment.belongsTo(db_auth.User, {
 	foreignKey: "user_id",
 	targetKey: "user_id",
 });
-db.Comment.belongsTo(db.Ticket, {
+db_ticket.Comment.belongsTo(db_ticket.Ticket, {
 	foreignKey: "ticket_id",
 	targetKey: "ticket_id",
 });
 
 // Notification Associations
-db.Notification.belongsTo(db.User, {
+db_ticket.Notification.belongsTo(db_auth.User, {
 	foreignKey: "notifier_id",
 	targetKey: "user_id",
 });
-db.User.hasMany(db.Notification, {
+db_auth.User.hasMany(db_ticket.Notification, {
 	foreignKey: "notifier_id",
 	sourceKey: "user_id",
 });
 
-db.NotificationChange.belongsTo(db.User, {
+db_ticket.NotificationChange.belongsTo(db_auth.User, {
 	foreignKey: "actor_id",
 	targetKey: "user_id",
 });
-db.User.hasMany(db.NotificationChange, {
+db_auth.User.hasMany(db_ticket.NotificationChange, {
 	foreignKey: "actor_id",
 	sourceKey: "user_id",
 });
 
-db.NotificationObject.hasOne(db.Notification, {
+db_ticket.NotificationObject.hasOne(db_ticket.Notification, {
 	foreignKey: "notification_object_id",
 	sourceKey: "id",
 });
-db.Notification.belongsTo(db.NotificationObject, {
+db_ticket.Notification.belongsTo(db_ticket.NotificationObject, {
 	foreignKey: "notification_object_id",
 	targetKey: "id",
 });
 
-db.NotificationChange.belongsTo(db.NotificationObject, {
+db_ticket.NotificationChange.belongsTo(db_ticket.NotificationObject, {
 	foreignKey: "notification_object_id",
 	targetKey: "id",
 });
-db.NotificationObject.hasOne(db.NotificationChange, {
+db_ticket.NotificationObject.hasOne(db_ticket.NotificationChange, {
 	foreignKey: "notification_object_id",
 	sourceKey: "id",
 });
 
-db.Ticket.hasMany(db.NotificationObject, {
+db_ticket.Ticket.hasMany(db_ticket.NotificationObject, {
 	foreignKey: "entity_id",
 	sourceKey: "id",
 	constraints: false,
@@ -188,13 +155,13 @@ db.Ticket.hasMany(db.NotificationObject, {
 		},
 	},
 });
-db.NotificationObject.belongsTo(db.Ticket, {
+db_ticket.NotificationObject.belongsTo(db_ticket.Ticket, {
 	foreignKey: "entity_id",
 	targetKey: "id",
 	constraints: false,
 });
 
-db.Comment.hasMany(db.NotificationObject, {
+db_ticket.Comment.hasMany(db_ticket.NotificationObject, {
 	foreignKey: "entity_id",
 	sourceKey: "comment_id",
 	constraints: false,
@@ -202,13 +169,13 @@ db.Comment.hasMany(db.NotificationObject, {
 		entity_type: "TICKET_COMMENT",
 	},
 });
-db.NotificationObject.belongsTo(db.Comment, {
+db_ticket.NotificationObject.belongsTo(db_ticket.Comment, {
 	foreignKey: "entity_id",
 	targetKey: "comment_id",
 	constraints: false,
 });
 
-db.NotificationObject.addHook("afterFind", (findResult) => {
+db_ticket.NotificationObject.addHook("afterFind", (findResult) => {
 	if (!Array.isArray(findResult)) findResult = [findResult];
 
 	for (const instance of findResult) {
@@ -238,11 +205,13 @@ db.NotificationObject.addHook("afterFind", (findResult) => {
 });
 
 // Scopes
-db.Ticket.addScope("reportable", {
+db_ticket.Ticket.addScope("reportable", {
 	where: {
 		private: 0
 	}
 })
+
+const db = {...db_auth, ...db_ticket};
 
 Object.keys(db).forEach((modelName) => {
 	if (db[modelName].associate) {
@@ -250,7 +219,7 @@ Object.keys(db).forEach((modelName) => {
 	}
 });
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
-
-module.exports = db;
+module.exports = {
+  auth: db_auth,
+  ticket: db_ticket
+};

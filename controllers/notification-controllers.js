@@ -1,11 +1,11 @@
 const db = require("../models");
 
-const { Op } = db.Sequelize;
+const { Op } = db.ticket.Sequelize;
 
 const makeNotification = async (entity, type) => {
-	const trx = await db.sequelize.transaction();
+	const trx = await db.ticket.sequelize.transaction();
 	try {
-		const notification_object = await db.NotificationObject.create(
+		const notification_object = await db.ticket.NotificationObject.create(
 			{
 				entity_type: type,
 				entity_id: entity.id || entity.comment_id,
@@ -15,7 +15,7 @@ const makeNotification = async (entity, type) => {
 			}
 		);
 
-		const notification_change = await db.NotificationChange.create(
+		const notification_change = await db.ticket.NotificationChange.create(
 			{
 				notification_object_id: notification_object.id,
 				actor_id:
@@ -32,19 +32,19 @@ const makeNotification = async (entity, type) => {
 
 		switch (type) {
 			case "TICKET_CREATE":
-				notifier = await db.User.findAll({
+				notifier = await db.auth.User.findAll({
 					where: {
 						"$Role.role_category$": entity.assigned_to,
 					},
-					include: [{ model: db.Role, attributes: ["role_category"] }],
+					include: [{ model: db.auth.Role, attributes: ["role_category"] }],
 					attributes: ["user_id"],
 				});
 				break;
 			case "TICKET_COMMENT":
-				const ticket = await db.Ticket.findOne({
+				const ticket = await db.ticket.Ticket.findOne({
 					where: { ticket_id: entity.ticket_id },
 				});
-				notifier = await db.User.findAll({
+				notifier = await db.auth.User.findAll({
 					where: {
 						user_id:
 							ticket.pic_id === entity.user_id
@@ -55,7 +55,7 @@ const makeNotification = async (entity, type) => {
 				});
 				break;
 			case "TICKET_PROGRESS":
-				notifier = await db.User.findAll({
+				notifier = await db.auth.User.findAll({
 					where: {
 						user_id: entity.created_by,
 					},
@@ -63,7 +63,7 @@ const makeNotification = async (entity, type) => {
 				});
 				break;
 			case "TICKET_CLOSED":
-				notifier = await db.User.findAll({
+				notifier = await db.auth.User.findAll({
 					where: {
 						user_id: entity.pic_id,
 					},
@@ -72,7 +72,7 @@ const makeNotification = async (entity, type) => {
 				break;
 		}
 
-		const notification = await db.Notification.bulkCreate(
+		const notification = await db.ticket.Notification.bulkCreate(
 			notifier.map((user) => ({
 				notification_object_id: notification_object.id,
 				notifier_id: user.user_id,
@@ -89,7 +89,7 @@ const makeNotification = async (entity, type) => {
 };
 
 const getUserNotification = async (req, res, next) => {
-	const notifications = await db.Notification.findAll({
+	const notifications = await db.ticket.Notification.findAll({
 		limit: 10,
 		order: [["createdAt", "DESC"]],
 		where: {
@@ -97,22 +97,22 @@ const getUserNotification = async (req, res, next) => {
 		},
 		include: [
 			{
-				model: db.NotificationObject,
+				model: db.ticket.NotificationObject,
 				include: [
-					{ model: db.Comment, attributes: ["comment_body", "ticket_id"] },
+					{ model: db.ticket.Comment, attributes: ["comment_body", "ticket_id"] },
 					{
-						model: db.Ticket,
+						model: db.ticket.Ticket,
 						include: [
-							{ model: db.User, attributes: ["name"], as: "pic" },
-							{ model: db.User, attributes: ["name"], as: "createdBy" },
-							{ model: db.CaseSubject, attributes: ["subject"] },
-							{ model: db.Subproduct, attributes: ["subproduct_name"] },
-							{ model: db.Product, attributes: ["product_name"] },
+							{ model: db.auth.User, attributes: ["name"], as: "pic" },
+							{ model: db.auth.User, attributes: ["name"], as: "createdBy" },
+							{ model: db.ticket.CaseSubject, attributes: ["subject"] },
+							{ model: db.ticket.Subproduct, attributes: ["subproduct_name"] },
+							{ model: db.ticket.Product, attributes: ["product_name"] },
 						],
 					},
 					{
-						model: db.NotificationChange,
-						include: [{ model: db.User, attributes: ["name"] }],
+						model: db.ticket.NotificationChange,
+						include: [{ model: db.auth.User, attributes: ["name"] }],
 					},
 				],
 			},
@@ -160,9 +160,9 @@ const getUserNotification = async (req, res, next) => {
 };
 
 const deleteNotificationOfTicket = async (ticket_id) => {
-	const trx = await db.sequelize.transaction()
+	const trx = await db.ticket.sequelize.transaction()
 
-	const NotificationObject = await db.NotificationObject.findAll({
+	const NotificationObject = await db.ticket.NotificationObject.findAll({
 		where: {
 			[Op.or]: [
 				{
@@ -178,29 +178,29 @@ const deleteNotificationOfTicket = async (ticket_id) => {
 			],
 		},
 		include: [
-			{ model: db.Ticket, attributes: ["ticket_id"] },
+			{ model: db.ticket.Ticket, attributes: ["ticket_id"] },
 			{
-				model: db.Comment,
-				include: [{ model: db.Ticket, attributes: ["id"] }],
+				model: db.ticket.Comment,
+				include: [{ model: db.ticket.Ticket, attributes: ["id"] }],
 				attributes: ["comment_id", "ticket_id"],
 			},
 		],
 	});
 
 	try {
-		await db.Notification.destroy({
+		await db.ticket.Notification.destroy({
 			where: {
 				notification_object_id: NotificationObject.map((n) => n.id),
 			},
 			transaction: trx,
 		});
-		await db.NotificationChange.destroy({
+		await db.ticket.NotificationChange.destroy({
 			where: {
 				notification_object_id: NotificationObject.map((n) => n.id),
 			},
 			transaction: trx,
 		});
-		await db.NotificationObject.destroy({ 
+		await db.ticket.NotificationObject.destroy({ 
 			where: {
 				id: NotificationObject.map((n) => n.id),
 			},

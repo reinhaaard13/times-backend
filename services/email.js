@@ -62,24 +62,24 @@ class EmailService {
 	}
 
 	async getRecipientEmailByDepartment(department) {
-		const email = await db.User.findAll({
+		const email = await db.auth.User.findAll({
 			where: {
 				"$Role.role_category$": department,
 			},
-			include: [{ model: db.Role, attributes: ["role_category"] }],
+			include: [{ model: db.auth.Role, attributes: ["role_category"] }],
 		});
 		return email.map((item) => item.email);
 	}
 
 	async sendTicketCreatedEmail(newTicket) {
-		const ticket = await db.Ticket.findOne({
+		const ticket = await db.ticket.Ticket.findOne({
 			where: {
 				ticket_id: newTicket.ticket_id,
 			},
 			include: [
-				{ model: db.CaseSubject, attributes: ["severity", "subject"] },
-				{ model: db.Product, attributes: ["product_name"] },
-				{ model: db.Subproduct, attributes: ["subproduct_name"] },
+				{ model: db.ticket.CaseSubject, attributes: ["severity", "subject"] },
+				{ model: db.ticket.Product, attributes: ["product_name"] },
+				{ model: db.ticket.Subproduct, attributes: ["subproduct_name"] },
 			],
 		});
 		const department = ticket.assigned_to;
@@ -148,7 +148,7 @@ class EmailService {
 	}
 
 	async sendReminderEmail() {
-		const tickets = await db.Ticket.findAll({
+		const tickets = await db.ticket.Ticket.findAll({
 			where: {
 				[Op.and]: [
 					{
@@ -164,9 +164,9 @@ class EmailService {
 				],
 			},
 			include: [
-				{ model: db.CaseSubject, attributes: ["severity", "subject"] },
-				{ model: db.Product, attributes: ["product_name"] },
-				{ model: db.Subproduct, attributes: ["subproduct_name"] },
+				{ model: db.ticket.CaseSubject, attributes: ["severity", "subject"] },
+				{ model: db.ticket.Product, attributes: ["product_name"] },
+				{ model: db.ticket.Subproduct, attributes: ["subproduct_name"] },
 			],
 		});
 
@@ -175,11 +175,11 @@ class EmailService {
 		let departments = tickets.map((ticket) => ticket.assigned_to);
 		departments = Array.from(new Set(departments));
 		for (const department of departments) {
-			const user = await db.User.findAll({
+			const user = await db.auth.User.findAll({
 				where: {
 					"$Role.role_category$": department,
 				},
-				include: [{ model: db.Role, attributes: ["role_category"] }],
+				include: [{ model: db.auth.Role, attributes: ["role_category"] }],
 			});
 			users = users.concat(user);
 		}
@@ -187,11 +187,11 @@ class EmailService {
 		let authorDepartments = tickets.map(ticket => ticket.created_by_dept);
 		authorDepartments = Array.from(new Set(authorDepartments));
 		for (const department of authorDepartments) {
-			const authorDeptUsers = await db.User.findAll({
+			const authorDeptUsers = await db.auth.User.findAll({
 				where: {
 					"$Role.role_category$": department,
 				},
-				include: [{ model: db.Role, attributes: ["role_category"] }],
+				include: [{ model: db.auth.Role, attributes: ["role_category"] }],
 			});
 
 			authorDeptUsers.forEach(user => {

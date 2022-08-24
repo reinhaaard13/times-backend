@@ -7,12 +7,12 @@ const EmailService = new Email()
 
 module.exports.refresh = async () => {
   console.log("Refreshing SLA");
-  const tickets = await db.Ticket.findAll({
+  const tickets = await db.ticket.Ticket.findAll({
     where: {
       status: ['OPEN', 'PROGRESS']
     },
     include: [
-      { model: db.CaseSubject, attributes: ["subject", "severity"]}
+      { model: db.ticket.CaseSubject, attributes: ["subject", "severity"]}
     ]
   })
   for (const ticket of tickets) {

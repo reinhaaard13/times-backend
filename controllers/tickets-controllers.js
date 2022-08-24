@@ -50,9 +50,9 @@ const getAllTickets = async (req, res) => {
 	if (sortBy === "severity") {
 		order = ["CaseSubject", "severity"];
 	} else if (sortBy === "created_by") {
-		order = [{ model: db.User, as: "createdBy" }, "name"];
+		order = [{ model: db.auth.User, as: "createdBy" }, "name"];
 	} else if (sortBy === "pic") {
-		order = [{ model: db.User, as: "pic" }, "name"];
+		order = [{ model: db.auth.User, as: "pic" }, "name"];
 	} else if (sortBy === "subject") {
 		order = ["CaseSubject", "subject"];
 	} else if (sortBy === "product") {
@@ -60,12 +60,12 @@ const getAllTickets = async (req, res) => {
 	}
 
 	try {
-		const { count, rows: tickets } = await db.Ticket.findAndCountAll({
+		const { count, rows: tickets } = await db.ticket.Ticket.findAndCountAll({
 			include: [
-				{ model: db.Product, attributes: ["product_name"] },
-				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
-				{ model: db.User, attributes: ["name"], as: "pic" },
-				{ model: db.User, attributes: ["name"], as: "createdBy" },
+				{ model: db.ticket.Product, attributes: ["product_name"] },
+				{ model: db.ticket.CaseSubject, attributes: ["subject", "severity"] },
+				{ model: db.auth.User, attributes: ["name"], as: "pic" },
+				{ model: db.auth.User, attributes: ["name"], as: "createdBy" },
 			],
 			where: {
 				[Op.and]: [
@@ -94,7 +94,7 @@ const getAllTickets = async (req, res) => {
 		});
 
 		const { count: countAll, rows: allTickets } =
-			await db.Ticket.findAndCountAll();
+			await db.ticket.Ticket.findAndCountAll();
 		const stats = {
 			total: countAll,
 			open: allTickets.filter((ticket) => ticket.status === "OPEN").length,
@@ -139,13 +139,13 @@ const createTicket = async (req, res) => {
 		description,
 	} = req.body;
 
-	const trx = await db.sequelize.transaction();
+	const trx = await db.ticket.sequelize.transaction();
 
 	let user;
 	let user_role;
 	try {
 		const user_id = req.userData.id;
-		user = await db.User.findOne({
+		user = await db.auth.User.findOne({
 			where: {
 				user_id,
 			},
@@ -163,10 +163,10 @@ const createTicket = async (req, res) => {
 	}
 
 	try {
-		const lastId = await db.Ticket.max("id");
+		const lastId = await db.ticket.Ticket.max("id");
 		const newId = lastId + 1;
 
-		const { product_name } = await db.Product.findOne({
+		const { product_name } = await db.ticket.Product.findOne({
 			where: {
 				product_id: product,
 			},
@@ -175,7 +175,7 @@ const createTicket = async (req, res) => {
 		const generatedId =
 			product_name.substring(0, 3).toUpperCase() + padStart(newId, 4);
 
-		const newTicket = db.Ticket.build({
+		const newTicket = db.ticket.Ticket.build({
 			ticket_id: generatedId,
 			location,
 			cust_name,
@@ -191,7 +191,7 @@ const createTicket = async (req, res) => {
 			created_by_dept: user_role.role_category,
 		});
 
-		const caseSubject = await db.CaseSubject.findOne({
+		const caseSubject = await db.ticket.CaseSubject.findOne({
 			where: {
 				id: casesubject,
 			},
@@ -228,17 +228,17 @@ const getTicketById = async (req, res) => {
 	const id = req.params.id;
 
 	try {
-		const ticket = await db.Ticket.findOne({
+		const ticket = await db.ticket.Ticket.findOne({
 			where: {
 				ticket_id: id,
 			},
 			include: [
-				{ model: db.Product, attributes: ["product_name"] },
-				{ model: db.Subproduct, attributes: ["subproduct_name"] },
-				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
-				{ model: db.User, attributes: ["name"], as: "pic" },
-				{ model: db.User, attributes: ["name"], as: "createdBy" },
-				{ model: db.Attachment, attributes: ["attachment_url"] },
+				{ model: db.ticket.Product, attributes: ["product_name"] },
+				{ model: db.ticket.Subproduct, attributes: ["subproduct_name"] },
+				{ model: db.ticket.CaseSubject, attributes: ["subject", "severity"] },
+				{ model: db.auth.User, attributes: ["name"], as: "pic" },
+				{ model: db.auth.User, attributes: ["name"], as: "createdBy" },
+				{ model: db.ticket.Attachment, attributes: ["attachment_url"] },
 			],
 		});
 
@@ -254,10 +254,10 @@ const getTicketById = async (req, res) => {
 const deleteTicketById = async (req, res) => {
 	const id = req.params.id;
 
-	const trx = await db.sequelize.transaction();
+	const trx = await db.ticket.sequelize.transaction();
 
 	try {
-		const ticket = await db.Ticket.findOne({
+		const ticket = await db.ticket.Ticket.findOne({
 			where: {
 				ticket_id: id,
 			},
@@ -295,15 +295,15 @@ const modifyTicketStatus = async (req, res) => {
 	const { status } = req.body;
 
 	try {
-		const ticket = await db.Ticket.findOne({
+		const ticket = await db.ticket.Ticket.findOne({
 			where: {
 				ticket_id: id,
 			},
 			include: [
-				{ model: db.Product, attributes: ["product_name"] },
-				{ model: db.Subproduct, attributes: ["subproduct_name"] },
-				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
-				{ model: db.User, attributes: ["name"], as: "pic" },
+				{ model: db.ticket.Product, attributes: ["product_name"] },
+				{ model: db.ticket.Subproduct, attributes: ["subproduct_name"] },
+				{ model: db.ticket.CaseSubject, attributes: ["subject", "severity"] },
+				{ model: db.auth.User, attributes: ["name"], as: "pic" },
 			],
 		});
 
@@ -339,13 +339,13 @@ const getTicketComments = async (req, res) => {
 	const { id } = req.params;
 
 	try {
-		const comments = await db.Comment.findAll({
+		const comments = await db.ticket.Comment.findAll({
 			where: {
 				ticket_id: id,
 			},
 			include: [
-				{ model: db.User, attributes: ["name"] },
-				{ model: db.Attachment, attributes: ["attachment_url"] },
+				{ model: db.auth.User, attributes: ["name"] },
+				{ model: db.ticket.Attachment, attributes: ["attachment_url"] },
 			],
 		});
 		// setTimeout(() => {
@@ -361,10 +361,10 @@ const createTicketComment = async (req, res) => {
 	const { comment_body } = req.body;
 	const user = req.userData.id;
 
-	const trx = await db.sequelize.transaction();
+	const trx = await db.ticket.sequelize.transaction();
 
 	// Check if ticket user is the PIC of the ticket
-	const ticket = await db.Ticket.findOne({
+	const ticket = await db.ticket.Ticket.findOne({
 		where: {
 			ticket_id: id,
 		},
@@ -379,7 +379,7 @@ const createTicketComment = async (req, res) => {
 
 	// Add Comment
 	try {
-		const comment = await db.Comment.create(
+		const comment = await db.ticket.Comment.create(
 			{
 				comment_body,
 				ticket_id: id,
@@ -449,7 +449,7 @@ const getTicketsReport = async (req, res) => {
 	}
 
 	try {
-		tickets = await db.Ticket.scope("reportable").findAll({
+		tickets = await db.ticket.Ticket.scope("reportable").findAll({
 			where: {
 				[Op.and]: [
 					{
@@ -461,22 +461,22 @@ const getTicketsReport = async (req, res) => {
 				],
 			},
 			include: [
-				{ model: db.Product, attributes: ["product_name"] },
-				{ model: db.Subproduct, attributes: ["subproduct_name"] },
-				{ model: db.CaseSubject, attributes: ["subject", "severity"] },
-				{ model: db.User, attributes: ["name"], as: "pic" },
+				{ model: db.ticket.Product, attributes: ["product_name"] },
+				{ model: db.ticket.Subproduct, attributes: ["subproduct_name"] },
+				{ model: db.ticket.CaseSubject, attributes: ["subject", "severity"] },
+				{ model: db.auth.User, attributes: ["name"], as: "pic" },
 			],
 		});
 
 		const casesubject_subject =
 			where.casesubject &&
-			(await db.CaseSubject.findByPk(where.casesubject).then(
+			(await db.ticket.CaseSubject.findByPk(where.casesubject).then(
 				(subject) => subject.subject
 			));
 
 		const product_name =
 			where.product &&
-			(await db.Product.findByPk(where.product).then(
+			(await db.ticket.Product.findByPk(where.product).then(
 				(product) => product.product_name
 			));
 
@@ -498,19 +498,19 @@ const getTicketsReport = async (req, res) => {
 
 const getFilterParameters = async (req, res) => {
 	try {
-		const products = await db.Product.findAll({
+		const products = await db.ticket.Product.findAll({
 			attributes: [
 				["product_id", "option_value"],
 				["product_name", "option_name"],
 			],
 		});
-		const casesubjects = await db.CaseSubject.findAll({
+		const casesubjects = await db.ticket.CaseSubject.findAll({
 			attributes: [
 				["id", "option_value"],
 				["subject", "option_name"],
 			],
 		});
-		const departments = await db.Role.findAll({
+		const departments = await db.auth.Role.findAll({
 			attributes: [["role_category", "option_value"]],
 			group: ["role_category"],
 		});

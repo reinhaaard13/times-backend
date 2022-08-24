@@ -10,15 +10,15 @@ const login = async (req, res) => {
 	let foundUser;
 	try {
 		// Try to find the user in the database
-		foundUser = await db.User.findOne({
+		foundUser = await db.auth.User.findOne({
 			where: {
 				[Op.or]: [{ username: user }, { email: user }],
 			},
 			include: {
-				model: db.Role,
+				model: db.auth.Role,
 				attributes: ["role_id", "role_category"],
 				include: {
-					model: db.Privilege,
+					model: db.auth.Privilege,
 					attributes: ["privilege_id"],
 				},
 			},
@@ -94,7 +94,7 @@ const refreshToken = async (req, res) => {
 	let foundUser;
 	try {
 		// Try to find the user in the database
-		foundUser = await db.User.findOne({
+		foundUser = await db.auth.User.findOne({
 			where: {
 				[Op.and]: [
 					{refreshToken},
@@ -102,10 +102,10 @@ const refreshToken = async (req, res) => {
 				]
 			},
 			include: {
-				model: db.Role,
+				model: db.auth.Role,
 				attributes: ["role_id", "role_category"],
 				include: {
-					model: db.Privilege,
+					model: db.auth.Privilege,
 					attributes: ["privilege_id"],
 				},
 			},
@@ -136,7 +136,7 @@ const register = async (req, res) => {
 
 	let foundUser;
 	try {
-		foundUser = await db.User.findOne({
+		foundUser = await db.auth.User.findOne({
 			where: {
 				[Op.or]: [{ username: username }, { email: email }, { phone: phone }],
 			},
@@ -158,7 +158,7 @@ const register = async (req, res) => {
 	}
 
 	try {
-		const newUser = await db.User.create({
+		const newUser = await db.auth.User.create({
 			username,
 			name,
 			phone,
