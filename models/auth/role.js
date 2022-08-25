@@ -37,5 +37,6 @@ module.exports = (sequelize, DataTypes) => {
       // name: 'role_level',
       fields: ['role_level']
     }],
+    schema: "db_auth"
   })
 }

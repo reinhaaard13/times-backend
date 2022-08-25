@@ -20,6 +20,7 @@ if (config.use_env_variable) {
 		config
 	);
 }
+sequelize.dialect.supports.schemas = true;
 
 fs.readdirSync(__dirname)
 	.filter((file) => {

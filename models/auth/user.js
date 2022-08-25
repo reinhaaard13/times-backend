@@ -88,6 +88,7 @@ module.exports = (sequelize, DataTypes) => {
         unique: false,
         fields: ['role']
       }
-    ]
+    ],
+    schema: "db_auth"
   })
 }

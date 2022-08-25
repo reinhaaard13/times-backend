@@ -99,11 +99,23 @@ const getUserNotification = async (req, res, next) => {
 			{
 				model: db.ticket.NotificationObject,
 				include: [
-					{ model: db.ticket.Comment, attributes: ["comment_body", "ticket_id"] },
+					{
+						model: db.ticket.Comment,
+						attributes: ["comment_body", "ticket_id"],
+					},
 					{
 						model: db.ticket.Ticket,
 						include: [
-							{ model: db.auth.User, attributes: ["name"], as: "pic" },
+							// {
+							// 	model: db.auth.User,
+							// 	attributes: ["name"],
+							// 	as: "pic",
+							// 	on: {
+							// 		user_id: db.ticket.Sequelize.literal(
+							// 			"`NotificationObject->Ticket`.`pic_id` = `NotificationObject->Ticket->`.`user_id`"
+							// 		),
+							// 	},
+							// },
 							{ model: db.auth.User, attributes: ["name"], as: "createdBy" },
 							{ model: db.ticket.CaseSubject, attributes: ["subject"] },
 							{ model: db.ticket.Subproduct, attributes: ["subproduct_name"] },
@@ -160,7 +172,7 @@ const getUserNotification = async (req, res, next) => {
 };
 
 const deleteNotificationOfTicket = async (ticket_id) => {
-	const trx = await db.ticket.sequelize.transaction()
+	const trx = await db.ticket.sequelize.transaction();
 
 	const NotificationObject = await db.ticket.NotificationObject.findAll({
 		where: {
@@ -200,22 +212,21 @@ const deleteNotificationOfTicket = async (ticket_id) => {
 			},
 			transaction: trx,
 		});
-		await db.ticket.NotificationObject.destroy({ 
+		await db.ticket.NotificationObject.destroy({
 			where: {
 				id: NotificationObject.map((n) => n.id),
 			},
-			transaction: trx 
+			transaction: trx,
 		});
 
-
-		await trx.commit()
+		await trx.commit();
 	} catch (err) {
-		await trx.rollback()
+		await trx.rollback();
 		console.log(err);
 		throw new Error("Failed to delete notification");
 	}
 
-	return
+	return;
 };
 
 module.exports = {

@@ -28,6 +28,7 @@ module.exports = (sequelize, DataTypes) => {
 			createdAt: "created_date",
 			updatedAt: "modified_date",
 			freezeTableName: true,
+			schema: "db_auth"
 		}
 	);
 };

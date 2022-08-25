@@ -30,6 +30,7 @@ module.exports = (sequelize, DataTypes) => {
         unique: false,
         fields: ['role_id', 'privilege_id'],
       }
-    ]
+    ],
+    schema: "db_auth"
   })
 }
