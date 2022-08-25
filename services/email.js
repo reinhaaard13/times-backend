@@ -4,6 +4,7 @@ const moment = require("moment");
 
 const db = require("../models");
 const { Op } = require("sequelize");
+require("dotenv").config();
 
 class EmailService {
 	constructor() {
@@ -203,7 +204,7 @@ class EmailService {
 		
 		tickets.forEach(async (ticket) => {
 			const user = await ticket.getPic({
-				include: [{ model: db.Role, attributes: ["role_category"] }],
+				include: [{ model: db.auth.Role, attributes: ["role_category"] }],
 			});
 			if (!user) return;
 			const found = users.find(
