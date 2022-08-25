@@ -68,7 +68,6 @@ app.patch("/api/sla/trigger", async (req, res, next) => {
 	res.send("SLA refreshed");
 });
 
-// db.sequelize.sync({ alter: true }).then(() => {
 db.auth.sequelize.sync().then(() => {
 	db.ticket.sequelize.sync().then(() => {
 		app.listen(process.env.PORT || 5000, () => {
