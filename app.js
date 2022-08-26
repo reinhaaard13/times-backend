@@ -29,7 +29,7 @@ app.use(logger("dev"));
 app.use(cors());
 
 app.use(
-	"/uploads/attachments",
+	"/cdn/uploads/attachments",
 	express.static(path.join(__dirname, "uploads", "attachments"))
 );
 
