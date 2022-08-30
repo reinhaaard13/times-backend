@@ -7,7 +7,7 @@ const { refresh, onComplete } = require("./helper/sla");
 const moment = require("moment");
 const logger = require("morgan");
 
-require('dotenv').config();
+require("dotenv").config();
 
 const db = require("./models");
 

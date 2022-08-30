@@ -1,4 +1,4 @@
-module.exports = (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes, schema) => {
 	return sequelize.define(
 		"Privilege",
 		{
@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
 			createdAt: "created_date",
 			updatedAt: "modified_date",
 			freezeTableName: true,
-			schema: "db_auth"
+			schema
 		}
 	);
 };

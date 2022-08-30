@@ -32,7 +32,8 @@ fs.readdirSync(__dirname)
 		// console.log(file);
 		const model = require(path.join(__dirname, file))(
 			sequelize,
-			Sequelize.DataTypes
+			Sequelize.DataTypes,
+			config.database
 		);
 		db[model.name] = model;
 	});

@@ -1,4 +1,4 @@
-module.exports = (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes, schema) => {
   return sequelize.define('RolePrivilege', {
     id: {
       type: DataTypes.INTEGER(4).ZEROFILL,
@@ -31,6 +31,6 @@ module.exports = (sequelize, DataTypes) => {
         fields: ['role_id', 'privilege_id'],
       }
     ],
-    schema: "db_auth"
+    schema
   })
 }

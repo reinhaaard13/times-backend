@@ -1,5 +1,5 @@
 
-module.exports = (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes, schema) => {
   return sequelize.define('User', {
     user_id: {
       type: DataTypes.INTEGER(11).ZEROFILL,
@@ -89,6 +89,6 @@ module.exports = (sequelize, DataTypes) => {
         fields: ['role']
       }
     ],
-    schema: "db_auth"
+    schema
   })
 }

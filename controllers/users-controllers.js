@@ -1,6 +1,7 @@
 const { Op } = require("sequelize");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const phpPassword = require("node-php-password")
 
 const db = require("../models");
 
@@ -34,7 +35,8 @@ const login = async (req, res) => {
 	let isPasswordValid;
 	try {
 		// Try to compare the password with the hash in the database
-		isPasswordValid = await bcrypt.compare(password, foundUser.password);
+		// isPasswordValid = await bcrypt.compare(password, foundUser.password);
+		isPasswordValid = phpPassword.verify(password, foundUser.password);
 	} catch (err) {
 		return res.status(500).json({ message: "Error Retrieving Password" });
 	}
@@ -152,7 +154,8 @@ const register = async (req, res) => {
 	let hashedPassword;
 
 	try {
-		hashedPassword = await bcrypt.hash(password, 12);
+		// hashedPassword = await bcrypt.hash(password, 12);
+		hashedPassword = phpPassword.hash(password);
 	} catch {
 		return res.status(500).json({ error });
 	}

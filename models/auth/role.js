@@ -1,4 +1,4 @@
-module.exports = (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes, schema) => {
   return sequelize.define('Role', {
     role_id: {
       type: DataTypes.STRING,
@@ -37,6 +37,6 @@ module.exports = (sequelize, DataTypes) => {
       // name: 'role_level',
       fields: ['role_level']
     }],
-    schema: "db_auth"
+    schema
   })
 }
