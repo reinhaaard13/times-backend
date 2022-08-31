@@ -29,20 +29,12 @@ const login = async (req, res) => {
 	}
 
 	if (!foundUser) {
-		return res.status(401).json({ message: "User not found" });
+		return res.status(403).json({ message: "User not found" });
 	}
-
-	let isPasswordValid;
-	try {
-		// Try to compare the password with the hash in the database
-		// isPasswordValid = await bcrypt.compare(password, foundUser.password);
-		isPasswordValid = phpPassword.verify(password, foundUser.password);
-	} catch (err) {
-		return res.status(500).json({ message: "Error Retrieving Password" });
-	}
-
+	
+	const isPasswordValid = phpPassword.verify(password, foundUser.password);
 	if (!isPasswordValid) {
-		return res.status(401).json({ message: "Invalid password" });
+		return res.status(403).json({ message: "Invalid password" });
 	}
 
 	// Create a token for the user
@@ -155,7 +147,7 @@ const register = async (req, res) => {
 
 	try {
 		// hashedPassword = await bcrypt.hash(password, 12);
-		hashedPassword = phpPassword.hash(password);
+		hashedPassword = phpPassword.hash(password, "PASSWORD_DEFAULT");
 	} catch {
 		return res.status(500).json({ error });
 	}
