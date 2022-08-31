@@ -8,12 +8,19 @@ require("dotenv").config();
 
 class EmailService {
 	constructor() {
+		// this.transporter = nodemailer.createTransport({
+		// 	service: "gmail",
+		// 	auth: {
+		// 		user: process.env.GMAIL_ACCOUNT,
+		// 		pass: process.env.GMAIL_PASSWORD,
+		// 	},
+		// });
 		this.transporter = nodemailer.createTransport({
-			service: "gmail",
-			auth: {
-				user: process.env.GMAIL_ACCOUNT,
-				pass: process.env.GMAIL_PASSWORD,
-			},
+			host: process.env.SMTP_HOST,
+			port: process.env.SMTP_PORT,
+			service: "smtp",
+			auth: false,
+			ignoreTLS: true
 		});
 	}
 
