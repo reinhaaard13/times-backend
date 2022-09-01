@@ -55,7 +55,7 @@ db_auth.User.hasMany(db_ticket.Ticket, {
 	as: "pic",
 });
 db_auth.User.hasMany(db_ticket.Ticket, {
-	foreignKey: "pic_id",
+	foreignKey: "created_by",
 	sourceKey: "user_id",
 	as: "createdBy",
 });
