@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes, schema) => {
   return sequelize.define('RolePrivilege', {
     id: {
-      type: DataTypes.INTEGER(4).ZEROFILL,
+      type: DataTypes.INTEGER(4),
       primaryKey: true,
       autoIncrement: true,
     },
