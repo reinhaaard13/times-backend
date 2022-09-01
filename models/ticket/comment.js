@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
 				allowNull: false,
 			},
 			user_id: {
-				type: DataTypes.INTEGER(11),
+				type: DataTypes.INTEGER,
 				allowNull: false,
 			},
 			ticket_id: {

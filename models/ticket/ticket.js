@@ -48,7 +48,7 @@ module.exports = (sequelize, DataTypes) => (
       allowNull: false,
     },
     created_by: {
-      type: DataTypes.INTEGER(11),
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     modified_by: {
@@ -56,7 +56,7 @@ module.exports = (sequelize, DataTypes) => (
       default: null,
     },
     pic_id: {
-      type: DataTypes.INTEGER(11),
+      type: DataTypes.INTEGER,
     },
     status: {
       type: DataTypes.STRING,
