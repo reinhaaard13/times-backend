@@ -140,7 +140,7 @@ const register = async (req, res) => {
 	}
 
 	if (foundUser) {
-		return res.status(401).json({ message: "User already exists" });
+		return res.status(403).json({ message: "User already exists" });
 	}
 
 	let hashedPassword;
