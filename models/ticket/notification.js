@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     notifier_id: {
-      type: DataTypes.INTEGER(11).ZEROFILL,
+      type: DataTypes.INTEGER(11),
       allowNull: false,
     },
     status: {

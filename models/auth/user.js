@@ -2,7 +2,7 @@
 module.exports = (sequelize, DataTypes, schema) => {
   return sequelize.define('User', {
     user_id: {
-      type: DataTypes.INTEGER(11).ZEROFILL,
+      type: DataTypes.INTEGER(11),
       primaryKey: true,
       autoIncrement: true,
     },

@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     actor_id: {
-      type: DataTypes.INTEGER(11).ZEROFILL,
+      type: DataTypes.INTEGER(11),
       allowNull: false,
     }
   })
