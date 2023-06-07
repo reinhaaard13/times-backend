@@ -8,20 +8,20 @@ require("dotenv").config();
 
 class EmailService {
 	constructor() {
-		this.transporter = nodemailer.createTransport({
-			service: "gmail",
-			auth: {
-				user: process.env.GMAIL_ACCOUNT,
-				pass: process.env.GMAIL_PASSWORD,
-			},
-		});
 		// this.transporter = nodemailer.createTransport({
-		// 	host: process.env.SMTP_HOST,
-		// 	port: process.env.SMTP_PORT,
-		// 	service: "smtp",
-		// 	auth: false,
-		// 	ignoreTLS: true
+		// 	service: "gmail",
+		// 	auth: {
+		// 		user: process.env.GMAIL_ACCOUNT,
+		// 		pass: process.env.GMAIL_PASSWORD,
+		// 	},
 		// });
+		this.transporter = nodemailer.createTransport({
+			host: process.env.SMTP_HOST,
+			port: process.env.SMTP_PORT,
+			service: "smtp",
+			auth: false,
+			ignoreTLS: true
+		});
 	}
 
 	async generateHTML(type, data) {
@@ -95,6 +95,7 @@ class EmailService {
 		const recipients = await this.getRecipientEmailByDepartment(department);
 
 		recipients.forEach(async (recipient) => {
+			console.log(process.env.GMAIL_ACCOUNT);
 			return this.transporter.sendMail(
 				{
 					from: process.env.GMAIL_ACCOUNT,

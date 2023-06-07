@@ -102,7 +102,8 @@ const getAllTickets = async (req, res) => {
 			progress: allTickets.filter((ticket) => ticket.status === "PROGRESS")
 				.length,
 		};
-
+		console.log(limit);
+		console.log(page);
 		const nextlink =
 			page * limit < count
 				? `/api/tickets?limit=${limit}&page=${page + 1}`
@@ -112,6 +113,7 @@ const getAllTickets = async (req, res) => {
 
 		return res.status(200).json({
 			tickets,
+			allTickets,
 			total: countAll,
 			limit,
 			page,
@@ -210,7 +212,7 @@ const createTicket = async (req, res) => {
 			);
 		});
 
-		await notificationController.makeNotification(newTicket, "TICKET_CREATE");
+		// await notificationController.makeNotification(newTicket, "TICKET_CREATE");
 
 		await trx.commit();
 
